@@ -198,10 +198,12 @@ function DashboardView({ isMobile }) {
                                     </td>
                                     {!isMobile && <td style={{ textTransform: 'capitalize' }}>{v.vehicleType}</td>}
                                     <td>
-                                        <span className={`badge badge-${v.type === 'personal' ? 'primary' : 'warning'}`}>{v.type}</span>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#64748B' }}>
+                                            <Clock size={14} />
+                                            {v.entryTime && v.entryTime.toDate ? v.entryTime.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
+                                        </div>
                                     </td>
-                                    {!isMobile && <td>...</td>}
-                                    {!isMobile && <td><span className="badge badge-success">Activo</span></td>}
+                                    <td><span className="badge badge-success">Activo</span></td>
                                 </tr>
                             ))}
                         </tbody>
