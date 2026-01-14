@@ -23,7 +23,7 @@ export default function AdminDashboard() {
     const closeMenu = () => { if (isMobile) setMobileMenuOpen(false); };
 
     return (
-        <div className="layout-container" style={{ position: 'relative' }}>
+        <div className="layout-container" style={{ position: 'relative', flexDirection: isMobile ? 'column' : 'row' }}>
             {/* Mobile Header */}
             {isMobile && (
                 <div style={{
