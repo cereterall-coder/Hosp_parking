@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { db, auth } from '../firebase';
 import { collection, onSnapshot, query, addDoc, deleteDoc, doc, orderBy, limit, serverTimestamp, where, updateDoc, writeBatch } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
-import { LogOut, Car, Bike, Users, LayoutDashboard, History, Plus, Trash2, Search, Clock, Shield, UserPlus, UserCheck, ToggleLeft, ToggleRight, Scale, UploadCloud, FileSpreadsheet } from 'lucide-react';
+import { LogOut, Car, Bike, Users, LayoutDashboard, History, Plus, Trash2, Search, Clock, Shield, UserPlus, UserCheck, ToggleLeft, ToggleRight, Scale, UploadCloud, FileSpreadsheet, Menu, X } from 'lucide-react';
 import { createSystemUser } from '../utils/adminAuth';
 import { useAuth } from '../contexts/AuthContext';
 import * as XLSX from 'xlsx';
@@ -10,37 +10,88 @@ import * as XLSX from 'xlsx';
 export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState('dashboard');
     const { userRole } = useAuth();
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    const toggleMenu = () => setMobileMenuOpen(!mobileMenuOpen);
+    const closeMenu = () => { if (isMobile) setMobileMenuOpen(false); };
 
     return (
-        <div className="layout-container">
+        <div className="layout-container" style={{ position: 'relative', overflow: 'hidden' }}>
+            {/* Mobile Header */}
+            {isMobile && (
+                <div style={{
+                    background: '#0F172A', color: 'white', padding: '1rem',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    position: 'sticky', top: 0, zIndex: 40
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <div style={{ background: '#2563EB', padding: '0.4rem', borderRadius: '0.5rem' }}>
+                            <Car size={20} color="white" />
+                        </div>
+                        <h1 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Hospital Parking</h1>
+                    </div>
+                    <button onClick={toggleMenu} style={{ background: 'none', border: 'none', color: 'white' }}>
+                        {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                    </button>
+                </div>
+            )}
+
+            {/* Sidebar Backdrop */}
+            {isMobile && mobileMenuOpen && (
+                <div
+                    onClick={closeMenu}
+                    style={{
+                        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 45
+                    }}
+                />
+            )}
+
             <aside style={{
                 width: '280px',
                 background: '#0F172A',
                 color: 'white',
                 display: 'flex', flexDirection: 'column', padding: '2rem 1.5rem',
-                boxShadow: '4px 0 24px rgba(0,0,0,0.05)', zIndex: 10
+                boxShadow: '4px 0 24px rgba(0,0,0,0.05)', zIndex: 50,
+                position: isMobile ? 'fixed' : 'sticky',
+                top: 0, bottom: 0, left: 0, height: '100vh',
+                transform: isMobile ? (mobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)') : 'none',
+                transition: 'transform 0.3s ease-in-out'
             }}>
-                <div style={{ marginBottom: '3rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{ background: '#2563EB', padding: '0.5rem', borderRadius: '0.5rem' }}>
-                        <Car size={24} color="white" />
+                {!isMobile && (
+                    <div style={{ marginBottom: '3rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <div style={{ background: '#2563EB', padding: '0.5rem', borderRadius: '0.5rem' }}>
+                            <Car size={24} color="white" />
+                        </div>
+                        <div>
+                            <h1 style={{ fontSize: '1.25rem', color: 'white', lineHeight: 1.2 }}>Panel Control</h1>
+                            <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>Hospital Parking</span>
+                        </div>
                     </div>
-                    <div>
-                        <h1 style={{ fontSize: '1.25rem', color: 'white', lineHeight: 1.2 }}>Panel Control</h1>
-                        <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>Hospital Parking</span>
+                )}
+                {isMobile && (
+                    <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
+                        <button onClick={closeMenu} style={{ background: 'none', border: 'none', color: '#94A3B8' }}><X size={24} /></button>
                     </div>
-                </div>
+                )}
 
                 <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <NavBtn icon={<LayoutDashboard size={20} />} label="Dashboard General" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
-                    <NavBtn icon={<Users size={20} />} label="Gestión Personal" active={activeTab === 'personal'} onClick={() => setActiveTab('personal')} />
-                    <NavBtn icon={<History size={20} />} label="Historial Accesos" active={activeTab === 'history'} onClick={() => setActiveTab('history')} />
+                    <NavBtn icon={<LayoutDashboard size={20} />} label="Dashboard General" active={activeTab === 'dashboard'} onClick={() => { setActiveTab('dashboard'); closeMenu(); }} />
+                    <NavBtn icon={<Users size={20} />} label="Gestión Personal" active={activeTab === 'personal'} onClick={() => { setActiveTab('personal'); closeMenu(); }} />
+                    <NavBtn icon={<History size={20} />} label="Historial Accesos" active={activeTab === 'history'} onClick={() => { setActiveTab('history'); closeMenu(); }} />
 
                     <div style={{ margin: '0.5rem 0', borderTop: '1px solid #1E293B' }}></div>
-                    <NavBtn icon={<UserCheck size={20} />} label="Control de Turnos" active={activeTab === 'shifts'} onClick={() => setActiveTab('shifts')} />
+                    <NavBtn icon={<UserCheck size={20} />} label="Control de Turnos" active={activeTab === 'shifts'} onClick={() => { setActiveTab('shifts'); closeMenu(); }} />
 
                     {userRole === 'admin' && (
                         <>
-                            <NavBtn icon={<Shield size={20} />} label="Usuarios Sistema" active={activeTab === 'system_users'} onClick={() => setActiveTab('system_users')} />
+                            <NavBtn icon={<Shield size={20} />} label="Usuarios Sistema" active={activeTab === 'system_users'} onClick={() => { setActiveTab('system_users'); closeMenu(); }} />
                         </>
                     )}
                 </nav>
@@ -63,9 +114,9 @@ export default function AdminDashboard() {
 
             <main className="main-content">
                 <div className="fade-in">
-                    <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
                         <div>
-                            <h2 style={{ fontSize: '1.8rem' }}>
+                            <h2 style={{ fontSize: '1.8rem', lineHeight: 1.2 }}>
                                 {activeTab === 'dashboard' && 'Visión General'}
                                 {activeTab === 'personal' && 'Personal Autorizado'}
                                 {activeTab === 'history' && 'Historial de Registros'}
@@ -74,10 +125,12 @@ export default function AdminDashboard() {
                             </h2>
                             <p className="text-muted">Gestión de estacionamiento en tiempo real</p>
                         </div>
-                        <div className="badge badge-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem' }}>
-                            <div style={{ width: '8px', height: '8px', background: '#22C55E', borderRadius: '50%' }}></div>
-                            Sistema Operativo
-                        </div>
+                        {!isMobile && (
+                            <div className="badge badge-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem' }}>
+                                <div style={{ width: '8px', height: '8px', background: '#22C55E', borderRadius: '50%' }}></div>
+                                Sistema Operativo
+                            </div>
+                        )}
                     </header>
 
                     {activeTab === 'dashboard' && <DashboardView />}
@@ -131,11 +184,11 @@ function DashboardView() {
                 <KPICard title="Motos Estacionadas" value={motos} icon={<Bike size={28} />} color="purple" />
                 <KPICard title="Visitantes Libres" value={libres} icon={<Users size={28} />} color="orange" />
             </div>
-            {/* ... (Keep existing dashboard table code implicitly via previous implementation or if this replaces entire file, need to make sure I don't lose it. I will write the full file content to be safe) ... */}
+
             <div className="card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', alignItems: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
                     <h3>Ocupación Actual</h3>
-                    <div className="input-group" style={{ marginBottom: 0, width: '300px' }}>
+                    <div className="input-group" style={{ marginBottom: 0, width: '100%', maxWidth: '300px' }}>
                         <input className="input" placeholder="Buscar placa..." style={{ padding: '0.5rem 1rem' }} />
                     </div>
                 </div>
@@ -324,12 +377,12 @@ function PersonnelView() {
 
     return (
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem', alignItems: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
                     <h3 style={{ fontSize: '1.5rem', marginBottom: '0.25rem', color: '#0F172A' }}>Personal Autorizado</h3>
                     <p className="text-muted">Directorio de personal médico y administrativo.</p>
                 </div>
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                     <div style={{ position: 'relative', overflow: 'hidden' }}>
                         <input
                             type="file"
@@ -447,10 +500,11 @@ function PersonnelView() {
                                 color: '#2563EB', fontWeight: 'bold', fontSize: '1.25rem',
                                 boxShadow: '0 4px 6px -1px rgba(37, 99, 235, 0.1)'
                             }}>
-                                {p.firstName?.[0]}{p.lastName?.[0]}
+                                {/* Safe render of initials */}
+                                {p.firstName ? p.firstName[0] : '?'}{p.lastName ? p.lastName[0] : ''}
                             </div>
                             <div>
-                                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0F172A' }}>{p.firstName} {p.lastName}</h3>
+                                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0F172A' }}>{p.firstName || 'Sin Nombre'} {p.lastName || ''}</h3>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     <span style={{ color: '#64748B', fontSize: '0.85rem' }}>{p.role}</span>
                                     {p.dni && <span className="badge" style={{ background: '#F1F5F9', color: '#64748B', fontSize: '0.7rem' }}>DNI: {p.dni}</span>}
