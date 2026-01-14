@@ -365,15 +365,15 @@ function HistoryView() {
                     </thead>
                     <tbody>
                         {history.map(h => {
-                            const start = h.entryTime?.toDate();
-                            const end = h.exitTime?.toDate();
+                            const start = h.entryTime && h.entryTime.toDate ? h.entryTime.toDate() : null;
+                            const end = h.exitTime && h.exitTime.toDate ? h.exitTime.toDate() : null;
                             const duration = end && start ? Math.round((end - start) / 60000) + ' min' : '-';
                             return (
                                 <tr key={h.id}>
                                     <td><span style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{h.plate}</span></td>
                                     <td>{h.driverName}</td>
-                                    <td>{start?.toLocaleString()}</td>
-                                    <td>{end?.toLocaleString()}</td>
+                                    <td>{start ? start.toLocaleString() : '-'}</td>
+                                    <td>{end ? end.toLocaleString() : '-'}</td>
                                     <td><span className="badge badge-primary">{duration}</span></td>
                                 </tr>
                             )
