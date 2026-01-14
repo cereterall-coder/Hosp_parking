@@ -23,7 +23,7 @@ export default function AdminDashboard() {
     const closeMenu = () => { if (isMobile) setMobileMenuOpen(false); };
 
     return (
-        <div className="layout-container" style={{ position: 'relative', overflow: 'hidden' }}>
+        <div className="layout-container" style={{ position: 'relative' }}>
             {/* Mobile Header */}
             {isMobile && (
                 <div style={{
@@ -43,24 +43,14 @@ export default function AdminDashboard() {
                 </div>
             )}
 
-            {/* Sidebar Backdrop */}
-            {isMobile && mobileMenuOpen && (
-                <div
-                    onClick={closeMenu}
-                    style={{
-                        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 45
-                    }}
-                />
-            )}
-
             <aside style={{
-                width: '280px',
+                width: isMobile ? '100%' : '280px',
                 background: '#0F172A',
                 color: 'white',
                 display: 'flex', flexDirection: 'column', padding: '2rem 1.5rem',
                 boxShadow: '4px 0 24px rgba(0,0,0,0.05)', zIndex: 50,
                 position: isMobile ? 'fixed' : 'sticky',
-                top: 0, bottom: 0, left: 0, height: '100vh',
+                top: isMobile ? '60px' : 0, bottom: 0, left: 0, height: isMobile ? 'calc(100vh - 60px)' : '100vh',
                 transform: isMobile ? (mobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)') : 'none',
                 transition: 'transform 0.3s ease-in-out'
             }}>
