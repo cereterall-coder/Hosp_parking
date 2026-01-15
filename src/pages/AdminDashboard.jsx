@@ -5,7 +5,6 @@ import { signOut } from 'firebase/auth';
 import { LogOut, Car, Bike, Users, LayoutDashboard, History, Plus, Trash2, Search, Clock, Shield, UserPlus, UserCheck, ToggleLeft, ToggleRight, Scale, UploadCloud, FileSpreadsheet, Menu, X } from 'lucide-react';
 import { createSystemUser } from '../utils/adminAuth';
 import { useAuth } from '../contexts/AuthContext';
-import * as XLSX from 'xlsx';
 
 class ErrorBoundary extends React.Component {
     constructor(props) {
@@ -27,13 +26,9 @@ class ErrorBoundary extends React.Component {
             return (
                 <div style={{ padding: '2rem', color: '#EF4444', textAlign: 'center', background: '#FEF2F2', borderRadius: '1rem', margin: '1rem' }}>
                     <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>Algo salió mal en esta vista.</h3>
-                    <p style={{ fontSize: '0.9rem', marginBottom: '1rem' }}>Por favor tome una captura de este error y envíela al soporte.</p>
-                    <pre style={{ maxWidth: '100%', overflow: 'auto', background: 'white', padding: '1rem', borderRadius: '0.5rem', fontSize: '0.75rem', textAlign: 'left' }}>
-                        {this.state.error && this.state.error.toString()}
-                        <br />
-                        {this.state.errorInfo && this.state.errorInfo.componentStack}
-                    </pre>
-                    <button className="btn btn-primary" onClick={() => this.setState({ hasError: false })} style={{ marginTop: '1rem' }}>Intenta Recargar Vista</button>
+                    <p style={{ fontSize: '0.9rem', marginBottom: '1rem' }}>Intenta recargar o contacta soporte.</p>
+                    <button className="btn btn-primary" onClick={() => this.setState({ hasError: false })} style={{ marginTop: '1rem' }}>Reintentar</button>
+                    <p style={{ marginTop: '1rem', fontSize: '0.7rem', color: '#999' }}>Error: {this.state.error?.toString()}</p>
                 </div>
             );
         }
@@ -47,15 +42,25 @@ export default function AdminDashboard() {
     const { userRole } = useAuth();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-    console.log("AdminDashboard Loaded - v3 Debug");
+    console.log("AdminDashboard Loaded - v3.1 No-XLSX");
 
     useEffect(() => {
         const handleError = (msg, url, lineNo, columnNo, error) => {
-            alert(`Error Global: ${msg} \nLinea: ${lineNo}`);
+            // Only alert if it's not aResizeObserver error which is common and harmless
+            if (!msg.includes('ResizeObserver')) {
+                alert(`Error: ${msg} \nLine: ${lineNo}`);
+            }
             return false;
         };
+        const handleRejection = (event) => {
+            alert(`Promise Error: ${event.reason}`);
+        };
         window.onerror = handleError;
-        return () => window.onerror = null;
+        window.onunhandledrejection = handleRejection;
+        return () => {
+            window.onerror = null;
+            window.onunhandledrejection = null;
+        };
     }, []);
 
     useEffect(() => {
@@ -370,51 +375,8 @@ function PersonnelView({ isMobile }) {
     }
 
     const handleFileUpload = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        setUploading(true);
-        const reader = new FileReader();
-
-        reader.onload = async (evt) => {
-            try {
-                const bstr = evt.target.result;
-                const wb = XLSX.read(bstr, { type: 'binary' });
-                const wsname = wb.SheetNames[0];
-                const ws = wb.Sheets[wsname];
-                const data = XLSX.utils.sheet_to_json(ws);
-
-                const batch = writeBatch(db);
-                let count = 0;
-
-                for (const row of data) {
-                    if (row.Nombre && row.Placa) {
-                        const newRef = doc(collection(db, "personnel"));
-                        const names = row.Nombre.toString().split(' ');
-
-                        batch.set(newRef, {
-                            firstName: names[0] || '',
-                            lastName: names.slice(1).join(' ') || '',
-                            fullName: row.Nombre.toString(),
-                            dni: row.DNI ? row.DNI.toString() : '',
-                            role: row.Cargo || 'Personal',
-                            licensePlate: row.Placa.toString().toUpperCase().replace(/\s/g, ''),
-                            vehicleType: 'auto',
-                            createdAt: serverTimestamp()
-                        });
-                        count++;
-                    }
-                }
-
-                await batch.commit();
-                alert(`Se importaron ${count} registros correctamente.`);
-            } catch (error) {
-                console.error("Error parsing Excel:", error);
-                alert("Error al procesar el archivo Excel. Verifique el formato.");
-            }
-            setUploading(false);
-        };
-        reader.readAsBinaryString(file);
+        alert("La importación está desactivada temporalmente para solucionar el error en móviles.");
+        // Code removed to prevent mobile crash
     };
 
     return (
