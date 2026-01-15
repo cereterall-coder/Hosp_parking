@@ -81,8 +81,22 @@ function UnifiedOperationFlow() {
         setStep('scan');
         setPlate('');
         setParkingItem(null);
+        setParkingItem(null);
         setMessage(null);
     }
+
+    const [currentUser, setCurrentUser] = useState(null);
+
+    // Fetch context on mount
+    useEffect(() => {
+        if (auth.currentUser) {
+            import("firebase/firestore").then(({ getDoc, doc }) => {
+                getDoc(doc(db, "users", auth.currentUser.uid)).then(d => {
+                    if (d.exists()) setCurrentUser(d.data());
+                });
+            });
+        }
+    }, []);
 
     if (step === 'scan') {
         return (
@@ -135,7 +149,7 @@ function UnifiedOperationFlow() {
                 <ArrowLeft size={18} /> Volver / Nueva Consulta
             </button>
 
-            {step === 'entry' && <EntryForm plateProp={plate} onSuccess={resetFlow} />}
+            {step === 'entry' && <EntryForm plateProp={plate} onSuccess={resetFlow} currentUser={currentUser} />}
 
             {step === 'exit' && (
                 <ExitView
@@ -148,7 +162,7 @@ function UnifiedOperationFlow() {
     );
 }
 
-function EntryForm({ plateProp, onSuccess }) {
+function EntryForm({ plateProp, onSuccess, currentUser }) {
     const [mode, setMode] = useState('personal');
     // plateProp comes from parent. We treat it as fixed for this transaction context.
     const [plate] = useState(plateProp);
@@ -225,7 +239,12 @@ function EntryForm({ plateProp, onSuccess }) {
                 type: mode,
                 entryTime: serverTimestamp(),
                 status: 'occupied',
-                dateString: new Date().toLocaleDateString('es-PE')
+                dateString: new Date().toLocaleDateString('es-PE'),
+                // Enhanced tracking data
+                hospital: currentUser?.hospital || 'Principal',
+                gate: currentUser?.gate || 'Principal',
+                agentName: currentUser?.fullName || currentUser?.username || 'Agente',
+                agentId: auth.currentUser?.uid
             };
 
             if (mode === 'personal') {
