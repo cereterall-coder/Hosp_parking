@@ -572,41 +572,42 @@ function HistoryView({ isMobile }) {
 
     const filteredHistory = history.filter(h =>
         (h.plate && h.plate.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (h.driverName && h.driverName.toLowerCase().includes(searchTerm.toLowerCase()))
+        (h.driverName && h.driverName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (h.agentName && h.agentName.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
     return (
         <div className="fade-in">
-            <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-                <h3 style={{ fontSize: '1.5rem', margin: 0, color: '#0F172A' }}>Historial de Registros</h3>
-                <div className="input-group" style={{ marginBottom: 0, width: '100%', maxWidth: '320px' }}>
+            <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
+                <div className="input-group" style={{ marginBottom: 0, width: '100%', maxWidth: '300px' }}>
                     <div style={{ position: 'relative' }}>
-                        <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
+                        <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
                         <input
                             className="input"
-                            placeholder="Buscar placa o conductor..."
+                            placeholder="Buscar placa, conductor o agente..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            style={{ paddingLeft: '3rem' }}
+                            style={{ paddingLeft: '2.5rem', padding: '0.4rem 0.4rem 0.4rem 2.5rem', fontSize: '0.9rem' }}
                         />
                     </div>
                 </div>
             </div>
 
             {isMobile ? (
-                <div className="grid-dashboard" style={{ gridTemplateColumns: '1fr', gap: '1rem' }}>
+                <div className="grid-dashboard" style={{ gridTemplateColumns: '1fr', gap: '0.5rem' }}>
                     {filteredHistory.map(h => {
                         const start = h.entryTime && h.entryTime.toDate ? h.entryTime.toDate() : null;
                         const end = h.exitTime && h.exitTime.toDate ? h.exitTime.toDate() : null;
                         const duration = end && start ? Math.round((end - start) / 60000) + ' min' : '-';
                         return (
-                            <div key={h.id} className="card" style={{ padding: '1rem' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                    <span style={{ fontWeight: 'bold', fontFamily: 'monospace' }}>{h.plate}</span>
-                                    <span className="badge badge-primary">{duration}</span>
+                            <div key={h.id} className="card" style={{ padding: '0.75rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                                    <span style={{ fontWeight: 'bold', fontFamily: 'monospace', fontSize: '1rem' }}>{h.plate}</span>
+                                    <span className="badge badge-primary" style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem' }}>{duration}</span>
                                 </div>
-                                <div style={{ fontSize: '0.9rem', color: '#1E293B', marginBottom: '0.5rem' }}>{h.driverName}</div>
-                                <div style={{ fontSize: '0.8rem', color: '#64748B', display: 'flex', justifyContent: 'space-between' }}>
+                                <div style={{ fontSize: '0.85rem', color: '#1E293B', marginBottom: '0.25rem' }}>{h.driverName}</div>
+                                {h.hospital && <div style={{ fontSize: '0.75rem', color: '#2563EB', marginBottom: '0.25rem' }}>{h.hospital} - {h.gate}</div>}
+                                <div style={{ fontSize: '0.75rem', color: '#64748B', display: 'flex', justifyContent: 'space-between' }}>
                                     <span>In: {start ? start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</span>
                                     <span>Out: {end ? end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</span>
                                 </div>
@@ -622,7 +623,8 @@ function HistoryView({ isMobile }) {
                             <thead>
                                 <tr>
                                     <th>Placa</th>
-                                    <th>Conductor</th>
+                                    <th>Conductor / Agente</th>
+                                    <th>Ubicación</th>
                                     <th>Ingreso</th>
                                     <th>Salida</th>
                                     <th>Duración</th>
@@ -636,10 +638,17 @@ function HistoryView({ isMobile }) {
                                     return (
                                         <tr key={h.id}>
                                             <td><span style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{h.plate}</span></td>
-                                            <td>{h.driverName}</td>
-                                            <td>{start ? start.toLocaleString() : '-'}</td>
-                                            <td>{end ? end.toLocaleString() : '-'}</td>
-                                            <td><span className="badge badge-primary">{duration}</span></td>
+                                            <td>
+                                                <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>{h.driverName}</div>
+                                                {h.agentName && <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>Por: {h.agentName}</div>}
+                                            </td>
+                                            <td>
+                                                <div style={{ fontSize: '0.85rem', color: '#2563EB', fontWeight: 500 }}>{h.hospital || '-'}</div>
+                                                <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{h.gate || '-'}</div>
+                                            </td>
+                                            <td style={{ fontSize: '0.85rem' }}>{start ? start.toLocaleString() : '-'}</td>
+                                            <td style={{ fontSize: '0.85rem' }}>{end ? end.toLocaleString() : '-'}</td>
+                                            <td><span className="badge badge-primary" style={{ fontSize: '0.75rem' }}>{duration}</span></td>
                                         </tr>
                                     )
                                 })}
