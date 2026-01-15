@@ -365,8 +365,8 @@ function PersonnelView({ isMobile }) {
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', marginBottom: '2rem', alignItems: isMobile ? 'flex-start' : 'center', gap: '1rem' }}>
                 <div>
-                    <h3 style={{ fontSize: '1.5rem', marginBottom: '0.25rem', color: '#0F172A' }}>Personal Autorizado</h3>
-                    <p className="text-muted">Directorio de personal médico y administrativo.</p>
+                    {/* Title removed to avoid duplication */}
+                    <p className="text-muted" style={{ marginTop: 0 }}>Directorio de personal médico y administrativo.</p>
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', width: isMobile ? '100%' : 'auto' }}>
@@ -444,7 +444,7 @@ function PersonnelView({ isMobile }) {
                             }}>
                                 {(p.firstName && p.firstName[0]) ? p.firstName[0] : (p.fullName ? p.fullName[0] : '?')}
                             </div>
-                            <div style={{ overflow: 'hidden' }}>
+                            <div style={{ overflow: 'hidden', paddingRight: '2rem' }}>
                                 <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                     {p.firstName ? `${p.firstName} ${p.lastName || ''}` : p.fullName}
                                 </h3>
