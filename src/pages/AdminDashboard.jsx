@@ -816,27 +816,6 @@ function SystemUsersView() {
                                 </select>
                             </div>
                             <div className="input-group">
-                                <label className="label">Usuario</label>
-                                <input
-                                    className="input"
-                                    required
-                                    value={newUser.username}
-                                    onChange={e => setNewUser({ ...newUser, username: e.target.value.replace(/\s/g, '') })}
-                                    placeholder="Ej: supervisor1"
-                                />
-                            </div>
-                            <div className="input-group">
-                                <label className="label">Contraseña</label>
-                                <input
-                                    type="password"
-                                    className="input"
-                                    required
-                                    value={newUser.password}
-                                    onChange={e => setNewUser({ ...newUser, password: e.target.value })}
-                                    placeholder="MIN 6 caracteres"
-                                />
-                            </div>
-                            <div className="input-group">
                                 <label className="label">Nombres y Apellidos</label>
                                 <input className="input" required value={newUser.fullName} onChange={e => setNewUser({ ...newUser, fullName: e.target.value })} placeholder="Nombre Completo" />
                             </div>
@@ -855,18 +834,6 @@ function SystemUsersView() {
                             <div className="input-group">
                                 <label className="label">Puerta</label>
                                 <input className="input" value={newUser.gate} onChange={e => setNewUser({ ...newUser, gate: e.target.value })} placeholder="N° Puerta" />
-                            </div>
-                            <div className="input-group">
-                                <label className="label">Rol</label>
-                                <select
-                                    className="input"
-                                    value={newUser.role}
-                                    onChange={e => setNewUser({ ...newUser, role: e.target.value })}
-                                >
-                                    <option value="agent">Agente (Móvil)</option>
-                                    <option value="supervisor">Supervisor</option>
-                                    <option value="admin">Administrador</option>
-                                </select>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'flex-end', gridColumn: '1 / -1' }}>
                                 <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%', padding: '0.9rem', height: '52px' }}>
