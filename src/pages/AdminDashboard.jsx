@@ -533,68 +533,98 @@ function PersonnelView({ isMobile }) {
 
 function HistoryView({ isMobile }) {
     const [history, setHistory] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
+
     useEffect(() => {
-        const q = query(collection(db, "history"), orderBy("entryTime", "desc"), limit(50));
+        // Increased limit to 100 to allow better client-side filtering
+        const q = query(collection(db, "history"), orderBy("entryTime", "desc"), limit(100));
         const unsubscribe = onSnapshot(q, (snap) => setHistory(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
         return unsubscribe;
     }, []);
 
-    if (isMobile) {
-        return (
-            <div className="grid-dashboard" style={{ gridTemplateColumns: '1fr', gap: '1rem' }}>
-                {history.map(h => {
-                    const start = h.entryTime && h.entryTime.toDate ? h.entryTime.toDate() : null;
-                    const end = h.exitTime && h.exitTime.toDate ? h.exitTime.toDate() : null;
-                    const duration = end && start ? Math.round((end - start) / 60000) + ' min' : '-';
-                    return (
-                        <div key={h.id} className="card" style={{ padding: '1rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                <span style={{ fontWeight: 'bold', fontFamily: 'monospace' }}>{h.plate}</span>
-                                <span className="badge badge-primary">{duration}</span>
-                            </div>
-                            <div style={{ fontSize: '0.9rem', color: '#1E293B', marginBottom: '0.5rem' }}>{h.driverName}</div>
-                            <div style={{ fontSize: '0.8rem', color: '#64748B', display: 'flex', justifyContent: 'space-between' }}>
-                                <span>In: {start ? start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</span>
-                                <span>Out: {end ? end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</span>
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-        );
-    }
+    const filteredHistory = history.filter(h =>
+        (h.plate && h.plate.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (h.driverName && h.driverName.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
 
     return (
-        <div className="card">
-            <div className="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Placa</th>
-                            <th>Conductor</th>
-                            <th>Ingreso</th>
-                            <th>Salida</th>
-                            <th>Duración</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {history.map(h => {
-                            const start = h.entryTime && h.entryTime.toDate ? h.entryTime.toDate() : null;
-                            const end = h.exitTime && h.exitTime.toDate ? h.exitTime.toDate() : null;
-                            const duration = end && start ? Math.round((end - start) / 60000) + ' min' : '-';
-                            return (
-                                <tr key={h.id}>
-                                    <td><span style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{h.plate}</span></td>
-                                    <td>{h.driverName}</td>
-                                    <td>{start ? start.toLocaleString() : '-'}</td>
-                                    <td>{end ? end.toLocaleString() : '-'}</td>
-                                    <td><span className="badge badge-primary">{duration}</span></td>
-                                </tr>
-                            )
-                        })}
-                    </tbody>
-                </table>
+        <div className="fade-in">
+            <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                <h3 style={{ fontSize: '1.5rem', margin: 0, color: '#0F172A' }}>Historial de Registros</h3>
+                <div className="input-group" style={{ marginBottom: 0, width: '100%', maxWidth: '320px' }}>
+                    <div style={{ position: 'relative' }}>
+                        <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
+                        <input
+                            className="input"
+                            placeholder="Buscar placa o conductor..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            style={{ paddingLeft: '3rem' }}
+                        />
+                    </div>
+                </div>
             </div>
+
+            {isMobile ? (
+                <div className="grid-dashboard" style={{ gridTemplateColumns: '1fr', gap: '1rem' }}>
+                    {filteredHistory.map(h => {
+                        const start = h.entryTime && h.entryTime.toDate ? h.entryTime.toDate() : null;
+                        const end = h.exitTime && h.exitTime.toDate ? h.exitTime.toDate() : null;
+                        const duration = end && start ? Math.round((end - start) / 60000) + ' min' : '-';
+                        return (
+                            <div key={h.id} className="card" style={{ padding: '1rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                    <span style={{ fontWeight: 'bold', fontFamily: 'monospace' }}>{h.plate}</span>
+                                    <span className="badge badge-primary">{duration}</span>
+                                </div>
+                                <div style={{ fontSize: '0.9rem', color: '#1E293B', marginBottom: '0.5rem' }}>{h.driverName}</div>
+                                <div style={{ fontSize: '0.8rem', color: '#64748B', display: 'flex', justifyContent: 'space-between' }}>
+                                    <span>In: {start ? start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</span>
+                                    <span>Out: {end ? end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</span>
+                                </div>
+                            </div>
+                        );
+                    })}
+                    {filteredHistory.length === 0 && <p className="text-muted text-center">No se encontraron registros.</p>}
+                </div>
+            ) : (
+                <div className="card">
+                    <div className="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Placa</th>
+                                    <th>Conductor</th>
+                                    <th>Ingreso</th>
+                                    <th>Salida</th>
+                                    <th>Duración</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredHistory.map(h => {
+                                    const start = h.entryTime && h.entryTime.toDate ? h.entryTime.toDate() : null;
+                                    const end = h.exitTime && h.exitTime.toDate ? h.exitTime.toDate() : null;
+                                    const duration = end && start ? Math.round((end - start) / 60000) + ' min' : '-';
+                                    return (
+                                        <tr key={h.id}>
+                                            <td><span style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{h.plate}</span></td>
+                                            <td>{h.driverName}</td>
+                                            <td>{start ? start.toLocaleString() : '-'}</td>
+                                            <td>{end ? end.toLocaleString() : '-'}</td>
+                                            <td><span className="badge badge-primary">{duration}</span></td>
+                                        </tr>
+                                    )
+                                })}
+                                {filteredHistory.length === 0 && (
+                                    <tr>
+                                        <td colSpan="5" className="text-center" style={{ padding: '2rem' }}>No se encontraron registros coincidentes.</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
