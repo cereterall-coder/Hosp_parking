@@ -3,10 +3,13 @@ import { db, auth } from '../firebase';
 import { collection, addDoc, query, where, getDocs, doc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { Camera, LogOut, Search, CheckCircle, AlertCircle, Car, Bike, ArrowLeft, AlertTriangle, ArrowRightLeft } from 'lucide-react';
+import { Camera, LogOut, Search, CheckCircle, AlertCircle, Car, Bike, ArrowLeft, AlertTriangle, ArrowRightLeft, LayoutDashboard, Clock } from 'lucide-react';
 import Tesseract from 'tesseract.js';
+import { onSnapshot } from 'firebase/firestore';
 
 export default function PorterDashboard() {
     const [currentUser, setCurrentUser] = useState(null);
+    const [view, setView] = useState('flow'); // 'flow' | 'dashboard'
 
     useEffect(() => {
         if (auth.currentUser) {
@@ -43,13 +46,93 @@ export default function PorterDashboard() {
                         )}
                     </div>
                 </div>
-                <button onClick={() => signOut(auth)} className="btn-icon" style={{ color: '#EF4444', background: '#FEF2F2' }}>
-                    <LogOut size={20} />
-                </button>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    {currentUser && currentUser.role !== 'supervisor' && (
+                        <button
+                            onClick={() => setView(view === 'flow' ? 'dashboard' : 'flow')}
+                            className={`btn-icon ${view === 'dashboard' ? 'active' : ''}`}
+                            style={{
+                                background: view === 'dashboard' ? '#EFF6FF' : '#F1F5F9',
+                                color: view === 'dashboard' ? '#2563EB' : '#64748B',
+                                padding: '0.5rem', borderRadius: '0.5rem'
+                            }}
+                        >
+                            <LayoutDashboard size={20} />
+                        </button>
+                    )}
+                    <button onClick={() => signOut(auth)} className="btn-icon" style={{ color: '#EF4444', background: '#FEF2F2' }}>
+                        <LogOut size={20} />
+                    </button>
+                </div>
             </header>
 
             <div className="main-content" style={{ padding: '1.5rem' }}>
-                <UnifiedOperationFlow currentUser={currentUser} />
+                {view === 'flow' ? (
+                    <UnifiedOperationFlow currentUser={currentUser} />
+                ) : (
+                    <AgentDashboardView currentUser={currentUser} />
+                )}
+            </div>
+        </div>
+    );
+}
+
+function AgentDashboardView({ currentUser }) {
+    const [vehicles, setVehicles] = useState([]);
+
+    useEffect(() => {
+        if (!currentUser?.hospital || !currentUser?.gate) return;
+
+        const q = query(
+            collection(db, "active_parking"),
+            where("hospital", "==", currentUser.hospital),
+            where("gate", "==", currentUser.gate),
+            where("status", "==", "occupied")
+        );
+
+        const unsubscribe = onSnapshot(q, (snap) => {
+            setVehicles(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        });
+
+        return unsubscribe;
+    }, [currentUser]);
+
+    return (
+        <div className="fade-in">
+            <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: '#0F172A' }}>Vehículos en Sede</h3>
+                <div className="badge badge-primary" style={{ fontSize: '1rem', padding: '0.5rem 1rem' }}>{vehicles.length}</div>
+            </div>
+
+            <div className="grid-dashboard" style={{ gridTemplateColumns: '1fr', gap: '0.75rem' }}>
+                {vehicles.map(v => {
+                    const entryTime = v.entryTime?.toDate();
+                    const now = new Date();
+                    const diffMins = entryTime ? Math.round((now - entryTime) / 60000) : 0;
+
+                    return (
+                        <div key={v.id} className="card" style={{ padding: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                                <div style={{ fontWeight: 700, fontSize: '1.1rem', fontFamily: 'monospace', color: '#1E293B' }}>{v.plate}</div>
+                                <div style={{ fontSize: '0.8rem', color: '#64748B' }}>{v.driverName || 'Conductor General'}</div>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                                <div className="badge badge-warning" style={{ marginBottom: '0.25rem', display: 'inline-block' }}>
+                                    {diffMins} min
+                                </div>
+                                <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
+                                    {entryTime ? entryTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                                </div>
+                            </div>
+                        </div>
+                    )
+                })}
+                {vehicles.length === 0 && (
+                    <div style={{ textAlign: 'center', padding: '3rem', color: '#94A3B8', border: '2px dashed #E2E8F0', borderRadius: '1rem' }}>
+                        <Car size={48} style={{ opacity: 0.3, marginBottom: '1rem' }} />
+                        <p>No hay vehículos registrados en esta puerta.</p>
+                    </div>
+                )}
             </div>
         </div>
     );
