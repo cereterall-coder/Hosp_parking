@@ -50,6 +50,15 @@ export default function AdminDashboard() {
     console.log("AdminDashboard Loaded - v3 Debug");
 
     useEffect(() => {
+        const handleError = (msg, url, lineNo, columnNo, error) => {
+            alert(`Error Global: ${msg} \nLinea: ${lineNo}`);
+            return false;
+        };
+        window.onerror = handleError;
+        return () => window.onerror = null;
+    }, []);
+
+    useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 768);
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
