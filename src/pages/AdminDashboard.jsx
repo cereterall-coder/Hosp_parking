@@ -7,12 +7,47 @@ import { createSystemUser } from '../utils/adminAuth';
 import { useAuth } from '../contexts/AuthContext';
 import * as XLSX from 'xlsx';
 
+class ErrorBoundary extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false, error: null, errorInfo: null };
+    }
+
+    static getDerivedStateFromError(error) {
+        return { hasError: true, error };
+    }
+
+    componentDidCatch(error, errorInfo) {
+        console.error("ErrorBoundary caught an error", error, errorInfo);
+        this.setState({ errorInfo });
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div style={{ padding: '2rem', color: '#EF4444', textAlign: 'center', background: '#FEF2F2', borderRadius: '1rem', margin: '1rem' }}>
+                    <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>Algo salió mal en esta vista.</h3>
+                    <p style={{ fontSize: '0.9rem', marginBottom: '1rem' }}>Por favor tome una captura de este error y envíela al soporte.</p>
+                    <pre style={{ maxWidth: '100%', overflow: 'auto', background: 'white', padding: '1rem', borderRadius: '0.5rem', fontSize: '0.75rem', textAlign: 'left' }}>
+                        {this.state.error && this.state.error.toString()}
+                        <br />
+                        {this.state.errorInfo && this.state.errorInfo.componentStack}
+                    </pre>
+                    <button className="btn btn-primary" onClick={() => this.setState({ hasError: false })} style={{ marginTop: '1rem' }}>Intenta Recargar Vista</button>
+                </div>
+            );
+        }
+
+        return this.props.children;
+    }
+}
+
 export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState('dashboard');
     const { userRole } = useAuth();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-    console.log("AdminDashboard Loaded - v2 Fixed");
+    console.log("AdminDashboard Loaded - v3 Debug");
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -129,11 +164,13 @@ export default function AdminDashboard() {
                         )}
                     </header>
 
-                    {activeTab === 'dashboard' && <DashboardView isMobile={isMobile} />}
-                    {activeTab === 'personal' && <PersonnelView isMobile={isMobile} />}
-                    {activeTab === 'history' && <HistoryView isMobile={isMobile} />}
-                    {activeTab === 'system_users' && userRole === 'admin' && <SystemUsersView isMobile={isMobile} />}
-                    {activeTab === 'shifts' && <ShiftsView isMobile={isMobile} />}
+                    <ErrorBoundary key={activeTab}>
+                        {activeTab === 'dashboard' && <DashboardView isMobile={isMobile} />}
+                        {activeTab === 'personal' && <PersonnelView isMobile={isMobile} />}
+                        {activeTab === 'history' && <HistoryView isMobile={isMobile} />}
+                        {activeTab === 'system_users' && userRole === 'admin' && <SystemUsersView isMobile={isMobile} />}
+                        {activeTab === 'shifts' && <ShiftsView isMobile={isMobile} />}
+                    </ErrorBoundary>
                 </div>
             </main>
         </div>
