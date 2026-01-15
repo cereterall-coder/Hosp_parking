@@ -42,7 +42,7 @@ export default function AdminDashboard() {
     const { userRole } = useAuth();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-    console.log("AdminDashboard Loaded - v3.1 No-XLSX");
+    console.log("AdminDashboard Loaded - v3.2 FORCED UPDATE");
 
     useEffect(() => {
         const handleError = (msg, url, lineNo, columnNo, error) => {
