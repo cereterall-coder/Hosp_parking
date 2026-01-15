@@ -489,13 +489,38 @@ function PersonnelView({ isMobile }) {
     );
 }
 
-function HistoryView() {
+function HistoryView({ isMobile }) {
     const [history, setHistory] = useState([]);
     useEffect(() => {
         const q = query(collection(db, "history"), orderBy("entryTime", "desc"), limit(50));
         const unsubscribe = onSnapshot(q, (snap) => setHistory(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
         return unsubscribe;
     }, []);
+
+    if (isMobile) {
+        return (
+            <div className="grid-dashboard" style={{ gridTemplateColumns: '1fr', gap: '1rem' }}>
+                {history.map(h => {
+                    const start = h.entryTime && h.entryTime.toDate ? h.entryTime.toDate() : null;
+                    const end = h.exitTime && h.exitTime.toDate ? h.exitTime.toDate() : null;
+                    const duration = end && start ? Math.round((end - start) / 60000) + ' min' : '-';
+                    return (
+                        <div key={h.id} className="card" style={{ padding: '1rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                <span style={{ fontWeight: 'bold', fontFamily: 'monospace' }}>{h.plate}</span>
+                                <span className="badge badge-primary">{duration}</span>
+                            </div>
+                            <div style={{ fontSize: '0.9rem', color: '#1E293B', marginBottom: '0.5rem' }}>{h.driverName}</div>
+                            <div style={{ fontSize: '0.8rem', color: '#64748B', display: 'flex', justifyContent: 'space-between' }}>
+                                <span>In: {start ? start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</span>
+                                <span>Out: {end ? end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</span>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    }
 
     return (
         <div className="card">
@@ -532,7 +557,7 @@ function HistoryView() {
     );
 }
 
-function ShiftsView() {
+function ShiftsView({ isMobile }) {
     const [users, setUsers] = useState([]);
 
     useEffect(() => {
@@ -542,10 +567,12 @@ function ShiftsView() {
     }, []);
 
     const toggleShift = async (user) => {
-        await updateDoc(doc(db, "users", user.id), {
-            onShift: !user.onShift,
-            lastShiftUpdate: serverTimestamp()
-        });
+        try {
+            await updateDoc(doc(db, "users", user.id), {
+                onShift: !user.onShift,
+                lastShiftUpdate: serverTimestamp()
+            });
+        } catch (e) { console.error(e); }
     }
 
     return (
@@ -555,7 +582,7 @@ function ShiftsView() {
                 <p className="text-muted">Gestione la disponibilidad de los agentes en tiempo real.</p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1rem' }}>
                 {users.map(u => (
                     <div key={u.id} className="card" style={{
                         padding: '1.25rem',
