@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
 import { useNavigate } from 'react-router-dom';
-import { Car, Lock, Mail, ShieldCheck } from 'lucide-react';
+import { Car, Lock, Mail, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 
 export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
@@ -112,7 +113,7 @@ export default function Login() {
                                 type="text"
                                 className="input"
                                 style={{ paddingLeft: '3rem' }}
-                                placeholder="Ej: portero1 o admin@hospital.com"
+                                placeholder="Ej: agente1 o admin@hospital.com"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
@@ -125,14 +126,32 @@ export default function Login() {
                         <div style={{ position: 'relative' }}>
                             <Lock size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
                             <input
-                                type="password"
+                                type={showPassword ? "text" : "password"}
                                 className="input"
-                                style={{ paddingLeft: '3rem' }}
+                                style={{ paddingLeft: '3rem', paddingRight: '3rem' }}
                                 placeholder="••••••••"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
                             />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                style={{
+                                    position: 'absolute',
+                                    right: '1rem',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    color: '#94A3B8',
+                                    padding: 0,
+                                    display: 'flex'
+                                }}
+                            >
+                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
                         </div>
                     </div>
 
