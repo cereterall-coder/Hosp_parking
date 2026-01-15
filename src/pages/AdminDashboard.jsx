@@ -952,14 +952,15 @@ function SystemUsersView() {
                             </div>
                             <div>
                                 <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#0F172A', margin: 0 }}>{u.username}</h3>
-                                <p style={{ fontSize: '0.75rem', color: '#94A3B8', margin: 0 }}>{u.email.split('@')[0]}</p>
+                                <p style={{ fontSize: '0.8rem', color: '#1E293B', margin: '2px 0 0 0', fontWeight: 500 }}>{u.fullName || 'Sin nombre'}</p>
+                                <p style={{ fontSize: '0.75rem', color: '#64748B', margin: 0 }}>
+                                    {u.role === 'admin' ? 'Administrador' : u.role === 'supervisor' ? 'Supervisor' : 'Agente'}
+                                </p>
                             </div>
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #F8FAFC', paddingTop: '0.75rem' }}>
-                            <div className={`badge badge-${u.role === 'admin' ? 'primary' : u.role === 'supervisor' ? 'warning' : 'success'}`} style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}>
-                                {u.role === 'admin' ? 'Admin' : u.role === 'supervisor' ? 'Sup.' : 'Agente'}
-                            </div>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', borderTop: '1px solid #F8FAFC', paddingTop: '0.75rem' }}>
+                            {/* Role badge removed from here as requested to be under name */}
                             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                                 <button
                                     onClick={() => startEdit(u)}
