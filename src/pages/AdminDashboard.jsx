@@ -781,65 +781,78 @@ function SystemUsersView() {
                     {msg && <div className="badge badge-danger" style={{ marginBottom: '1.5rem', display: 'flex', gap: '0.5rem' }}>{msg}</div>}
 
                     <form onSubmit={handleCreate}>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
-                            <div className="input-group">
-                                <label className="label">Usuario</label>
-                                <input
-                                    className="input"
-                                    required
-                                    value={newUser.username}
-                                    onChange={e => setNewUser({ ...newUser, username: e.target.value.replace(/\s/g, '') })}
-                                    placeholder="Ej: supervisor1"
-                                />
+                        {/* Datos Personales */}
+                        <div style={{ marginBottom: '1rem' }}>
+                            <h5 style={{ fontSize: '0.85rem', color: '#64748B', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>Información Personal</h5>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+                                <div className="input-group">
+                                    <label className="label">DNI</label>
+                                    <input className="input" required value={newUser.dni} onChange={e => setNewUser({ ...newUser, dni: e.target.value })} placeholder="Ej: 12345678" />
+                                </div>
+                                <div className="input-group" style={{ gridColumn: 'span 2' }}>
+                                    <label className="label">Nombres y Apellidos</label>
+                                    <input className="input" required value={newUser.fullName} onChange={e => setNewUser({ ...newUser, fullName: e.target.value })} placeholder="Nombre Completo" />
+                                </div>
+                                <div className="input-group">
+                                    <label className="label">Teléfono</label>
+                                    <input className="input" value={newUser.phone} onChange={e => setNewUser({ ...newUser, phone: e.target.value })} placeholder="Celular" />
+                                </div>
+                                <div className="input-group">
+                                    <label className="label">Hospital / Sede</label>
+                                    <input className="input" value={newUser.hospital} onChange={e => setNewUser({ ...newUser, hospital: e.target.value })} placeholder="Ej: Hospital Central" />
+                                </div>
+                                <div className="input-group">
+                                    <label className="label">Puerta Asignada</label>
+                                    <input className="input" value={newUser.gate} onChange={e => setNewUser({ ...newUser, gate: e.target.value })} placeholder="Ej: Puerta 1" />
+                                </div>
                             </div>
-                            <div className="input-group">
-                                <label className="label">Contraseña</label>
-                                <input
-                                    type="password"
-                                    className="input"
-                                    required
-                                    value={newUser.password}
-                                    onChange={e => setNewUser({ ...newUser, password: e.target.value })}
-                                    placeholder="MIN 6 caracteres"
-                                />
+                        </div>
+
+                        {/* Credenciales */}
+                        <div style={{ marginBottom: '1.5rem', paddingTop: '1rem', borderTop: '1px solid #F1F5F9' }}>
+                            <h5 style={{ fontSize: '0.85rem', color: '#64748B', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>Credenciales de Acceso</h5>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+                                <div className="input-group">
+                                    <label className="label">Usuario Sistema</label>
+                                    <input
+                                        className="input"
+                                        required
+                                        value={newUser.username}
+                                        onChange={e => setNewUser({ ...newUser, username: e.target.value.replace(/\s/g, '') })}
+                                        placeholder="Ej: agente.torres"
+                                        style={{ fontFamily: 'monospace' }}
+                                    />
+                                </div>
+                                <div className="input-group">
+                                    <label className="label">Contraseña</label>
+                                    <input
+                                        type="password"
+                                        className="input"
+                                        required
+                                        value={newUser.password}
+                                        onChange={e => setNewUser({ ...newUser, password: e.target.value })}
+                                        placeholder="Min. 6 caracteres"
+                                    />
+                                </div>
+                                <div className="input-group">
+                                    <label className="label">Rol de Usuario</label>
+                                    <select
+                                        className="input"
+                                        value={newUser.role}
+                                        onChange={e => setNewUser({ ...newUser, role: e.target.value })}
+                                    >
+                                        <option value="agent">Agente (Móvil)</option>
+                                        <option value="supervisor">Supervisor</option>
+                                        <option value="admin">Administrador</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div className="input-group">
-                                <label className="label">Rol</label>
-                                <select
-                                    className="input"
-                                    value={newUser.role}
-                                    onChange={e => setNewUser({ ...newUser, role: e.target.value })}
-                                >
-                                    <option value="agent">Agente (Móvil)</option>
-                                    <option value="supervisor">Supervisor</option>
-                                    <option value="admin">Administrador</option>
-                                </select>
-                            </div>
-                            <div className="input-group">
-                                <label className="label">Nombres y Apellidos</label>
-                                <input className="input" required value={newUser.fullName} onChange={e => setNewUser({ ...newUser, fullName: e.target.value })} placeholder="Nombre Completo" />
-                            </div>
-                            <div className="input-group">
-                                <label className="label">DNI</label>
-                                <input className="input" required value={newUser.dni} onChange={e => setNewUser({ ...newUser, dni: e.target.value })} placeholder="DNI" />
-                            </div>
-                            <div className="input-group">
-                                <label className="label">Teléfono</label>
-                                <input className="input" value={newUser.phone} onChange={e => setNewUser({ ...newUser, phone: e.target.value })} placeholder="Celular" />
-                            </div>
-                            <div className="input-group">
-                                <label className="label">Hospital</label>
-                                <input className="input" value={newUser.hospital} onChange={e => setNewUser({ ...newUser, hospital: e.target.value })} placeholder="Sede" />
-                            </div>
-                            <div className="input-group">
-                                <label className="label">Puerta</label>
-                                <input className="input" value={newUser.gate} onChange={e => setNewUser({ ...newUser, gate: e.target.value })} placeholder="N° Puerta" />
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'flex-end', gridColumn: '1 / -1' }}>
-                                <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%', padding: '0.9rem', height: '52px' }}>
-                                    {loading ? 'Guardando...' : 'Guardar y Crear'}
-                                </button>
-                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                            <button type="submit" className="btn btn-primary" disabled={loading} style={{ padding: '0.75rem 2rem', fontWeight: 600 }}>
+                                {loading ? 'Creando...' : 'Crear Usuario'}
+                            </button>
                         </div>
                     </form>
                 </div>
