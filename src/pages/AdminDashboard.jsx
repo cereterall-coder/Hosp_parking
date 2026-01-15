@@ -139,7 +139,26 @@ export default function AdminDashboard() {
     );
 }
 
-// ... NavBtn stays same ...
+function NavBtn({ icon, label, active, onClick }) {
+    return (
+        <button
+            onClick={onClick}
+            style={{
+                display: 'flex', alignItems: 'center', gap: '0.75rem',
+                width: '100%', padding: '0.75rem 1rem',
+                background: active ? '#1E293B' : 'transparent',
+                color: active ? 'white' : '#94A3B8',
+                border: 'none', borderRadius: '0.5rem',
+                cursor: 'pointer', textAlign: 'left',
+                transition: 'all 0.2s',
+                fontWeight: active ? 600 : 400
+            }}
+        >
+            <span style={{ color: active ? '#3B82F6' : 'currentColor' }}>{icon}</span>
+            <span>{label}</span>
+        </button>
+    );
+}
 
 // Pass isMobile prop down to Views
 function DashboardView({ isMobile }) {
@@ -214,7 +233,42 @@ function DashboardView({ isMobile }) {
     );
 }
 
-// ... KPICard stays same ...
+function KPICard({ title, value, icon, color, trend }) {
+    const bgColors = {
+        blue: '#EFF6FF',
+        indigo: '#EEF2FF',
+        purple: '#F3E8FF',
+        green: '#F0FDF4',
+        orange: '#FFF7ED',
+        red: '#FEF2F2'
+    };
+    const textColors = {
+        blue: '#2563EB',
+        indigo: '#4F46E5',
+        purple: '#9333EA',
+        green: '#16A34A',
+        orange: '#EA580C',
+        red: '#DC2626'
+    };
+
+    return (
+        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.5rem' }}>
+            <div style={{
+                background: bgColors[color] || bgColors.blue,
+                padding: '1rem', borderRadius: '1rem',
+                color: textColors[color] || textColors.blue,
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+                {icon}
+            </div>
+            <div>
+                <p style={{ color: '#64748B', fontSize: '0.9rem', marginBottom: '0.25rem', fontWeight: 500 }}>{title}</p>
+                <h3 style={{ fontSize: '1.8rem', fontWeight: 700, margin: 0, lineHeight: 1 }}>{value}</h3>
+                {trend && <div style={{ fontSize: '0.75rem', color: '#16A34A', marginTop: '0.25rem', fontWeight: 500 }}>{trend}</div>}
+            </div>
+        </div>
+    );
+}
 
 function PersonnelView({ isMobile }) {
     // ... existing logic ...
