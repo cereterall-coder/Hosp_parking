@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { db, auth } from '../firebase';
 import { collection, addDoc, query, where, getDocs, doc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
-import { Camera, LogOut, Search, CheckCircle, AlertCircle, Car, Bike, ArrowLeft, AlertTriangle, ArrowRightLeft } from 'lucide-react';
 import { Camera, LogOut, Search, CheckCircle, AlertCircle, Car, Bike, ArrowLeft, AlertTriangle, ArrowRightLeft, LayoutDashboard, Clock } from 'lucide-react';
 import Tesseract from 'tesseract.js';
 import { onSnapshot } from 'firebase/firestore';
@@ -12,13 +11,17 @@ export default function PorterDashboard() {
     const [view, setView] = useState('flow'); // 'flow' | 'dashboard'
 
     useEffect(() => {
-        if (auth.currentUser) {
-            import("firebase/firestore").then(({ getDoc, doc }) => {
-                getDoc(doc(db, "users", auth.currentUser.uid)).then(d => {
+        const unsubscribeAuth = auth.onAuthStateChanged(user => {
+            if (user) {
+                const unsubDoc = onSnapshot(doc(db, "users", user.uid), (d) => {
                     if (d.exists()) setCurrentUser(d.data());
                 });
-            });
-        }
+                return () => unsubDoc();
+            } else {
+                setCurrentUser(null);
+            }
+        });
+        return () => unsubscribeAuth();
     }, []);
 
     return (
