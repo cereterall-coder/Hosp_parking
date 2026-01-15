@@ -12,6 +12,7 @@ export default function AdminDashboard() {
     const { userRole } = useAuth();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+    console.log("AdminDashboard Loaded - v2 Fixed");
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 768);
