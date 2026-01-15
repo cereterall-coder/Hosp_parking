@@ -222,6 +222,56 @@ function DashboardView({ isMobile }) {
                 <KPICard title="Autos" value={autos} icon={<Car size={28} />} color="indigo" />
                 <KPICard title="Motos" value={motos} icon={<Bike size={28} />} color="purple" />
             </div>
+
+            {/* Top 5 Longest Stays */}
+            <div className="card" style={{ marginBottom: '2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                    <div style={{ background: '#FEF2F2', padding: '0.5rem', borderRadius: '0.5rem', color: '#DC2626' }}>
+                        <Clock size={20} />
+                    </div>
+                    <h3 style={{ fontSize: '1.2rem', margin: 0 }}>Mayor Estancia (Top 5)</h3>
+                </div>
+                <div style={{ overflowX: 'auto' }}>
+                    <div style={{ display: 'flex', gap: '1rem', paddingBottom: '0.5rem' }}>
+                        {vehicles
+                            .map(v => ({
+                                ...v,
+                                durationMs: v.entryTime && v.entryTime.toDate ? (new Date() - v.entryTime.toDate()) : 0
+                            }))
+                            .sort((a, b) => b.durationMs - a.durationMs)
+                            .slice(0, 5)
+                            .map((v, i) => {
+                                const hours = Math.floor(v.durationMs / (1000 * 60 * 60));
+                                const minutes = Math.floor((v.durationMs % (1000 * 60 * 60)) / (1000 * 60));
+                                return (
+                                    <div key={v.id} style={{
+                                        minWidth: '200px',
+                                        background: i === 0 ? '#FEF2F2' : '#F8FAFC',
+                                        border: i === 0 ? '1px solid #FECACA' : '1px solid #E2E8F0',
+                                        borderRadius: '0.75rem',
+                                        padding: '1rem',
+                                        flex: 1
+                                    }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                            <span style={{ fontWeight: 'bold', fontFamily: 'monospace', fontSize: '1.1rem' }}>{v.plate}</span>
+                                            <span className={`badge ${i === 0 ? 'badge-danger' : 'badge-primary'}`}>
+                                                #{i + 1}
+                                            </span>
+                                        </div>
+                                        <div style={{ fontSize: '0.9rem', color: '#64748B', marginBottom: '0.25rem' }}>
+                                            {v.driverName || 'Conductor desconocido'}
+                                        </div>
+                                        <div style={{ fontWeight: 'bold', color: i === 0 ? '#DC2626' : '#0F172A', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                            <Clock size={16} />
+                                            {hours}h {minutes}m
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        {vehicles.length === 0 && <p className="text-muted" style={{ padding: '1rem' }}>No hay vehículos registrados.</p>}
+                    </div>
+                </div>
+            </div>
             {/* ... Table logic ... */}
             <div className="card">
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
