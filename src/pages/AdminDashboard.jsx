@@ -129,7 +129,7 @@ export default function AdminDashboard() {
                         </div>
                         <div>
                             <p style={{ fontSize: '0.9rem', fontWeight: '500', textTransform: 'capitalize' }}>{userRole}</p>
-                            <p style={{ fontSize: '0.75rem', color: '#94A3B8' }}>Sesión Activa</p>
+                            <p style={{ fontSize: '0.75rem', color: '#94A3B8' }}>v2.5 (Fixed)</p>
                         </div>
                     </div>
                     <button onClick={() => signOut(auth)} className="btn btn-outline" style={{ width: '100%', borderColor: '#334155', background: 'transparent', color: '#CBD5E1' }}>
@@ -137,6 +137,7 @@ export default function AdminDashboard() {
                     </button>
                 </div>
             </aside>
+
 
             {/* Main Content Area */}
             <main className="main-content" style={{
