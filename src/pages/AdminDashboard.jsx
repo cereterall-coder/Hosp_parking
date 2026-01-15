@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { db, auth } from '../firebase';
 import { collection, onSnapshot, query, addDoc, deleteDoc, doc, orderBy, limit, serverTimestamp, where, updateDoc, writeBatch } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
-import { LogOut, Car, Bike, Users, LayoutDashboard, History, Plus, Trash2, Search, Clock, Shield, UserPlus, UserCheck, ToggleLeft, ToggleRight, Scale, UploadCloud, FileSpreadsheet, Menu, X, ShieldCheck, Lock, Building2, MapPin } from 'lucide-react';
+import { LogOut, Car, Bike, Users, LayoutDashboard, History, Plus, Trash2, Search, Clock, Shield, UserPlus, UserCheck, ToggleLeft, ToggleRight, Scale, UploadCloud, FileSpreadsheet, Menu, X, ShieldCheck, Lock, Building2, MapPin, Edit } from 'lucide-react';
 import { createSystemUser } from '../utils/adminAuth';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -714,6 +714,7 @@ function SystemUsersView() {
     const [users, setUsers] = useState([]);
     const [showForm, setShowForm] = useState(false);
     const [newUser, setNewUser] = useState({ username: '', password: '', role: 'agent', dni: '', fullName: '', phone: '', hospital: '', gate: '' });
+    const [editingUser, setEditingUser] = useState(null);
     const [loading, setLoading] = useState(false);
     const [msg, setMsg] = useState('');
 
@@ -737,22 +738,68 @@ function SystemUsersView() {
         e.preventDefault();
         setLoading(true);
         setMsg('');
-        const res = await createSystemUser(newUser.username, newUser.password, newUser.role, {
-            dni: newUser.dni,
-            fullName: newUser.fullName,
-            phone: newUser.phone,
-            hospital: newUser.hospital,
-            gate: newUser.gate
-        });
 
-        if (res.success) {
-            setShowForm(false);
-            setNewUser({ username: '', password: '', role: 'agent', dni: '', fullName: '', phone: '', hospital: '', gate: '' });
-            alert('Usuario creado correctamente!');
+        if (editingUser) {
+            // Update logic (Firestore only)
+            try {
+                await updateDoc(doc(db, "users", editingUser.id), {
+                    dni: newUser.dni,
+                    fullName: newUser.fullName,
+                    phone: newUser.phone,
+                    hospital: newUser.hospital,
+                    gate: newUser.gate,
+                    role: newUser.role,
+                    // username/email/password cant be easily updated without admin SDK or re-auth, 
+                    // so we skip them or warn user. For now only metadata.
+                });
+                alert('Usuario actualizado. Nota: Credenciales (Usuario/Pass) no se cambian aquí.');
+                setShowForm(false);
+                setNewUser({ username: '', password: '', role: 'agent', dni: '', fullName: '', phone: '', hospital: '', gate: '' });
+                setEditingUser(null);
+            } catch (err) {
+                console.error(err);
+                setMsg('Error al actualizar: ' + err.message);
+            }
         } else {
-            setMsg('Error: ' + res.error);
+            // Create logic
+            const res = await createSystemUser(newUser.username, newUser.password, newUser.role, {
+                dni: newUser.dni,
+                fullName: newUser.fullName,
+                phone: newUser.phone,
+                hospital: newUser.hospital,
+                gate: newUser.gate
+            });
+
+            if (res.success) {
+                setShowForm(false);
+                setNewUser({ username: '', password: '', role: 'agent', dni: '', fullName: '', phone: '', hospital: '', gate: '' });
+                alert('Usuario creado correctamente!');
+            } else {
+                setMsg('Error: ' + res.error);
+            }
         }
         setLoading(false);
+    }
+
+    const startEdit = (user) => {
+        setEditingUser(user);
+        setNewUser({
+            username: user.username,
+            password: '', // Password field blank on edit
+            role: user.role,
+            dni: user.dni || '',
+            fullName: user.fullName || '',
+            phone: user.phone || '',
+            hospital: user.hospital || '',
+            gate: user.gate || ''
+        });
+        setShowForm(true);
+    }
+
+    const cancelEdit = () => {
+        setShowForm(false);
+        setEditingUser(null);
+        setNewUser({ username: '', password: '', role: 'agent', dni: '', fullName: '', phone: '', hospital: '', gate: '' });
     }
 
     const toggleStatus = async (user) => {
@@ -772,7 +819,7 @@ function SystemUsersView() {
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem', alignItems: 'center' }}>
                 <button
                     className={`btn ${showForm ? 'btn-outline' : 'btn-primary'}`}
-                    onClick={() => setShowForm(!showForm)}
+                    onClick={() => showForm ? cancelEdit() : setShowForm(true)}
                     style={{ transition: 'all 0.3s', padding: '0.5rem 1rem', fontSize: '0.9rem' }}
                 >
                     {showForm ? 'Cancelar' : <><UserPlus size={16} /> Nuevo Usuario</>}
@@ -780,14 +827,14 @@ function SystemUsersView() {
             </div>
 
             {showForm && (
-                <div className="card fade-in" style={{ marginBottom: '1rem', borderLeft: '4px solid #2563EB', position: 'relative', padding: '0.75rem' }}>
+                <div className="card fade-in" style={{ marginBottom: '1rem', borderLeft: `4px solid ${editingUser ? '#F59E0B' : '#2563EB'}`, position: 'relative', padding: '0.75rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', paddingBottom: '0.5rem', borderBottom: '1px solid #F1F5F9' }}>
-                        <div style={{ background: '#EFF6FF', padding: '0.3rem', borderRadius: '50%', color: '#2563EB' }}>
-                            <Shield size={16} />
+                        <div style={{ background: editingUser ? '#FEF3C7' : '#EFF6FF', padding: '0.3rem', borderRadius: '50%', color: editingUser ? '#D97706' : '#2563EB' }}>
+                            {editingUser ? <Edit size={16} /> : <Shield size={16} />}
                         </div>
                         <div>
-                            <h4 style={{ margin: 0, fontSize: '0.95rem', color: '#1E293B' }}>Nueva Credencial</h4>
-                            <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748B' }}>Complete los datos.</p>
+                            <h4 style={{ margin: 0, fontSize: '0.95rem', color: '#1E293B' }}>{editingUser ? 'Editar Usuario' : 'Nueva Credencial'}</h4>
+                            <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748B' }}>{editingUser ? 'Modifique los datos necesarios.' : 'Complete los datos.'}</p>
                         </div>
                     </div>
 
@@ -847,10 +894,11 @@ function SystemUsersView() {
                                     <input
                                         className="input"
                                         required
+                                        disabled={!!editingUser} // Cannot edit username
                                         value={newUser.username}
                                         onChange={e => setNewUser({ ...newUser, username: e.target.value.replace(/\s/g, '') })}
                                         placeholder="Ej: usuario"
-                                        style={{ fontFamily: 'monospace', padding: '0.4rem' }}
+                                        style={{ fontFamily: 'monospace', padding: '0.4rem', opacity: editingUser ? 0.7 : 1 }}
                                     />
                                 </div>
                                 <div className="input-group" style={{ marginBottom: 0 }}>
@@ -858,11 +906,12 @@ function SystemUsersView() {
                                     <input
                                         type="password"
                                         className="input"
-                                        required
+                                        required={!editingUser} // Not required on edit
+                                        disabled={!!editingUser} // Disable password change for now
                                         value={newUser.password}
                                         onChange={e => setNewUser({ ...newUser, password: e.target.value })}
-                                        placeholder="******"
-                                        style={{ padding: '0.4rem' }}
+                                        placeholder={editingUser ? "(No editable)" : "******"}
+                                        style={{ padding: '0.4rem', opacity: editingUser ? 0.7 : 1 }}
                                     />
                                 </div>
                                 <div className="input-group" style={{ marginBottom: 0 }}>
@@ -883,7 +932,7 @@ function SystemUsersView() {
 
                         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                             <button type="submit" className="btn btn-primary" disabled={loading} style={{ padding: '0.5rem 1.5rem', fontWeight: 600, fontSize: '0.9rem' }}>
-                                {loading ? 'Creando...' : 'Crear Usuario'}
+                                {loading ? 'Procesando...' : (editingUser ? 'Actualizar Datos' : 'Crear Usuario')}
                             </button>
                         </div>
                     </form>
@@ -912,6 +961,14 @@ function SystemUsersView() {
                                 {u.role === 'admin' ? 'Admin' : u.role === 'supervisor' ? 'Sup.' : 'Agente'}
                             </div>
                             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                <button
+                                    onClick={() => startEdit(u)}
+                                    className="badge badge-outline"
+                                    style={{ fontSize: '0.7rem', padding: '0.2rem', cursor: 'pointer', border: 'none', background: 'white', color: '#64748B' }}
+                                    title="Editar Usuario"
+                                >
+                                    <Edit size={12} /> EDITAR
+                                </button>
                                 {u.role !== 'admin' && (
                                     <button
                                         onClick={() => toggleStatus(u)}
