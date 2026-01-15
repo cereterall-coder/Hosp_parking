@@ -3,7 +3,7 @@ import { getAuth, createUserWithEmailAndPassword, signOut } from "firebase/auth"
 import { getFirestore, doc, setDoc } from "firebase/firestore";
 import { firebaseConfig } from "../firebase";
 
-export const createSystemUser = async (username, password, role) => {
+export const createSystemUser = async (username, password, role, additionalData = {}) => {
     // 1. Initialize a SECOND app instance. 
     // This prevents the main "auth" from switching to the new user.
     const secondaryApp = initializeApp(firebaseConfig, "SecondaryApp");
@@ -24,7 +24,9 @@ export const createSystemUser = async (username, password, role) => {
             role: role,
             createdAt: new Date(),
             isSystemUser: true,
-            onShift: false // Default to false for agents/supervisors
+            onShift: false, // Default to false for agents/supervisors
+            isDisabled: false, // For enabling/disabling access
+            ...additionalData // dni, fullName, phone, hospital, gate
         });
 
         // 4. Cleanup: Sign out the secondary auth so it doesn't linger (though it's isolated)

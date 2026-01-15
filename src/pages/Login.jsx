@@ -43,6 +43,14 @@ export default function Login() {
                 const d = await getDoc(doc(db, "users", user.uid));
                 if (d.exists()) {
                     const userData = d.data();
+
+                    if (userData.isDisabled) {
+                        await auth.signOut();
+                        setError('CUENTA INHABILITADA: Contacte al administrador.');
+                        setLoading(false);
+                        return;
+                    }
+
                     if (userData.role === 'agent' && !userData.onShift) {
                         await auth.signOut();
                         setError('ACCESO DENEGADO: Tu turno no está habilitado por un Supervisor.');

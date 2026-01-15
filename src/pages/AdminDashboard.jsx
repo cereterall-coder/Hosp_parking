@@ -710,7 +710,7 @@ function ShiftsView({ isMobile }) {
 function SystemUsersView() {
     const [users, setUsers] = useState([]);
     const [showForm, setShowForm] = useState(false);
-    const [newUser, setNewUser] = useState({ username: '', password: '', role: 'agent' });
+    const [newUser, setNewUser] = useState({ username: '', password: '', role: 'agent', dni: '', fullName: '', phone: '', hospital: '', gate: '' });
     const [loading, setLoading] = useState(false);
     const [msg, setMsg] = useState('');
 
@@ -724,16 +724,34 @@ function SystemUsersView() {
         e.preventDefault();
         setLoading(true);
         setMsg('');
-        const res = await createSystemUser(newUser.username, newUser.password, newUser.role);
+        const res = await createSystemUser(newUser.username, newUser.password, newUser.role, {
+            dni: newUser.dni,
+            fullName: newUser.fullName,
+            phone: newUser.phone,
+            hospital: newUser.hospital,
+            gate: newUser.gate
+        });
 
         if (res.success) {
             setShowForm(false);
-            setNewUser({ username: '', password: '', role: 'agent' });
+            setNewUser({ username: '', password: '', role: 'agent', dni: '', fullName: '', phone: '', hospital: '', gate: '' });
             alert('Usuario creado correctamente!');
         } else {
             setMsg('Error: ' + res.error);
         }
         setLoading(false);
+    }
+
+    const toggleStatus = async (user) => {
+        if (!confirm(`¿${user.isDisabled ? 'Habilitar' : 'Inhabilitar'} usuario ${user.username}?`)) return;
+        try {
+            await updateDoc(doc(db, "users", user.id), {
+                isDisabled: !user.isDisabled
+            });
+        } catch (e) {
+            console.error(e);
+            alert("Error al actualizar estado");
+        }
     }
 
     return (
@@ -797,7 +815,60 @@ function SystemUsersView() {
                                     <option value="admin">Administrador</option>
                                 </select>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                            <div className="input-group">
+                                <label className="label">Usuario</label>
+                                <input
+                                    className="input"
+                                    required
+                                    value={newUser.username}
+                                    onChange={e => setNewUser({ ...newUser, username: e.target.value.replace(/\s/g, '') })}
+                                    placeholder="Ej: supervisor1"
+                                />
+                            </div>
+                            <div className="input-group">
+                                <label className="label">Contraseña</label>
+                                <input
+                                    type="password"
+                                    className="input"
+                                    required
+                                    value={newUser.password}
+                                    onChange={e => setNewUser({ ...newUser, password: e.target.value })}
+                                    placeholder="MIN 6 caracteres"
+                                />
+                            </div>
+                            <div className="input-group">
+                                <label className="label">Nombres y Apellidos</label>
+                                <input className="input" required value={newUser.fullName} onChange={e => setNewUser({ ...newUser, fullName: e.target.value })} placeholder="Nombre Completo" />
+                            </div>
+                            <div className="input-group">
+                                <label className="label">DNI</label>
+                                <input className="input" required value={newUser.dni} onChange={e => setNewUser({ ...newUser, dni: e.target.value })} placeholder="DNI" />
+                            </div>
+                            <div className="input-group">
+                                <label className="label">Teléfono</label>
+                                <input className="input" value={newUser.phone} onChange={e => setNewUser({ ...newUser, phone: e.target.value })} placeholder="Celular" />
+                            </div>
+                            <div className="input-group">
+                                <label className="label">Hospital</label>
+                                <input className="input" value={newUser.hospital} onChange={e => setNewUser({ ...newUser, hospital: e.target.value })} placeholder="Sede" />
+                            </div>
+                            <div className="input-group">
+                                <label className="label">Puerta</label>
+                                <input className="input" value={newUser.gate} onChange={e => setNewUser({ ...newUser, gate: e.target.value })} placeholder="N° Puerta" />
+                            </div>
+                            <div className="input-group">
+                                <label className="label">Rol</label>
+                                <select
+                                    className="input"
+                                    value={newUser.role}
+                                    onChange={e => setNewUser({ ...newUser, role: e.target.value })}
+                                >
+                                    <option value="agent">Agente (Móvil)</option>
+                                    <option value="supervisor">Supervisor</option>
+                                    <option value="admin">Administrador</option>
+                                </select>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'flex-end', gridColumn: '1 / -1' }}>
                                 <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%', padding: '0.9rem', height: '52px' }}>
                                     {loading ? 'Guardando...' : 'Guardar y Crear'}
                                 </button>
@@ -828,7 +899,20 @@ function SystemUsersView() {
                             <div className={`badge badge-${u.role === 'admin' ? 'primary' : u.role === 'supervisor' ? 'warning' : 'success'}`} style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}>
                                 {u.role === 'admin' ? 'Admin' : u.role === 'supervisor' ? 'Sup.' : 'Agente'}
                             </div>
-                            {u.onShift && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#22C55E' }} title="Turno Activo"></div>}
+                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                {u.role !== 'admin' && (
+                                    <button
+                                        onClick={() => toggleStatus(u)}
+                                        className={`badge ${u.isDisabled ? 'badge-danger' : 'badge-success'}`}
+                                        style={{ fontSize: '0.7rem', padding: '0.2rem', cursor: 'pointer', border: 'none' }}
+                                        title={u.isDisabled ? "Habilitar Acceso" : "Inhabilitar Acceso"}
+                                    >
+                                        {u.isDisabled ? <Lock size={12} /> : <ShieldCheck size={12} />}
+                                        {u.isDisabled ? ' INACTIVO' : ' ACTIVO'}
+                                    </button>
+                                )}
+                                {u.onShift && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22C55E' }} title="Turno Activo"></div>}
+                            </div>
                         </div>
                     </div>
                 ))}
