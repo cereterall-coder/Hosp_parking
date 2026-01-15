@@ -634,11 +634,19 @@ function HistoryView({ isMobile }) {
 
 function ShiftsView({ isMobile }) {
     const [users, setUsers] = useState([]);
+    const [locations, setLocations] = useState([]);
+    const { userRole } = useAuth();
+    const [editingGateUserId, setEditingGateUserId] = useState(null);
 
     useEffect(() => {
         const q = query(collection(db, "users"), where("role", "==", "agent"));
         const unsubscribe = onSnapshot(q, (snap) => setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
         return unsubscribe;
+    }, []);
+
+    useEffect(() => {
+        const q = query(collection(db, "locations"), orderBy("name"));
+        return onSnapshot(q, snap => setLocations(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     }, []);
 
     const toggleShift = async (user) => {
@@ -650,61 +658,95 @@ function ShiftsView({ isMobile }) {
         } catch (e) { console.error(e); }
     }
 
-    return (
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-            <div style={{ marginBottom: '2rem' }}>
-                <h3 style={{ fontSize: '1.5rem', marginBottom: '0.25rem', color: '#0F172A' }}>Control de Turnos</h3>
-                <p className="text-muted">Gestione la disponibilidad de los agentes en tiempo real.</p>
-            </div>
+    const updateGate = async (userId, newGate) => {
+        try {
+            await updateDoc(doc(db, "users", userId), { gate: newGate });
+            setEditingGateUserId(null);
+        } catch (e) { console.error(e); alert("Error al actualizar puerta"); }
+    }
 
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1rem' }}>
-                {users.map(u => (
-                    <div key={u.id} className="card" style={{
-                        padding: '1.25rem',
-                        border: u.onShift ? '1px solid #86EFAC' : '1px solid #FED7AA',
-                        background: u.onShift ? '#F0FDF4' : '#FFF7ED',
-                        transition: 'all 0.2s'
-                    }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <div style={{
-                                    width: '36px', height: '36px', borderRadius: '50%',
-                                    background: u.onShift ? '#DCFCE7' : '#FFEDD5',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    color: u.onShift ? '#16A34A' : '#EA580C'
-                                }}>
-                                    <Shield size={18} />
+    return (
+        <div className="fade-in">
+            <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem', color: '#0F172A', fontWeight: 700 }}>Gestión de Turnos</h3>
+
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.75rem' }}>
+                {users.map(u => {
+                    const userLocation = locations.find(l => l.name === u.hospital);
+                    const gates = userLocation ? (userLocation.gates || []) : [];
+                    const isEditing = editingGateUserId === u.id;
+                    const canEdit = (userRole === 'supervisor' || userRole === 'admin');
+
+                    return (
+                        <div key={u.id} className="card" style={{
+                            padding: '0.75rem',
+                            border: u.onShift ? '1px solid #86EFAC' : '1px solid #E2E8F0',
+                            background: u.onShift ? '#F0FDF4' : '#FFFFFF',
+                            transition: 'all 0.2s',
+                            display: 'flex', flexDirection: 'column', gap: '0.75rem'
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <div style={{
+                                        width: '32px', height: '32px', borderRadius: '50%',
+                                        background: u.onShift ? '#DCFCE7' : '#F1F5F9',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        color: u.onShift ? '#16A34A' : '#64748B'
+                                    }}>
+                                        <Shield size={16} />
+                                    </div>
+                                    <div>
+                                        <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1E293B', margin: 0 }}>{u.username}</h4>
+                                        <div style={{ fontSize: '0.75rem', color: '#64748B', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                            <span>{u.hospital || 'Sin Sede'}</span>
+                                            <span>•</span>
+                                            {isEditing ? (
+                                                <select
+                                                    autoFocus
+                                                    className="input"
+                                                    style={{ padding: '0 0.25rem', height: 'auto', fontSize: '0.75rem', width: 'auto' }}
+                                                    value={u.gate}
+                                                    onChange={(e) => updateGate(u.id, e.target.value)}
+                                                    onBlur={() => setEditingGateUserId(null)}
+                                                >
+                                                    {gates.map(g => <option key={g} value={g}>{g}</option>)}
+                                                </select>
+                                            ) : (
+                                                <span
+                                                    onClick={() => canEdit && setEditingGateUserId(u.id)}
+                                                    style={{ cursor: canEdit ? 'pointer' : 'default', borderBottom: canEdit ? '1px dashed #94A3B8' : 'none', fontWeight: 500 }}
+                                                    title={canEdit ? "Clic para cambiar puerta" : ""}
+                                                >
+                                                    {u.gate || 'Sin Puerta'}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#1E293B', margin: 0 }}>{u.username}</h4>
-                                    <p style={{ fontSize: '0.75rem', color: u.onShift ? '#15803D' : '#C2410C', margin: 0 }}>
-                                        {u.onShift ? 'Habilitado' : 'Inhabilitado'}
-                                    </p>
+                                <div className={`badge ${u.onShift ? 'badge-success' : 'badge-warning'}`} style={{ fontSize: '0.65rem', padding: '0.15rem 0.4rem' }}>
+                                    {u.onShift ? 'ACTIVO' : 'INACTIVO'}
                                 </div>
                             </div>
-                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: u.onShift ? '#22C55E' : '#F97316' }}></div>
-                        </div>
 
-                        <button
-                            onClick={() => toggleShift(u)}
-                            className="btn"
-                            style={{
-                                width: '100%',
-                                padding: '0.6rem',
-                                fontSize: '0.85rem',
-                                display: 'flex',
-                                justifyContent: 'center',
-                                gap: '0.5rem',
-                                background: 'white',
-                                border: `1px solid ${u.onShift ? '#FECACA' : '#BBF7D0'}`,
-                                color: u.onShift ? '#EF4444' : '#16A34A',
-                                fontWeight: 600
-                            }}
-                        >
-                            {u.onShift ? 'Cerrar Turno' : 'Habilitar Turno'}
-                        </button>
-                    </div>
-                ))}
+                            <button
+                                onClick={() => toggleShift(u)}
+                                className="btn"
+                                style={{
+                                    width: '100%',
+                                    padding: '0.4rem',
+                                    fontSize: '0.8rem',
+                                    display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.4rem',
+                                    background: u.onShift ? '#FEF2F2' : '#F0FDF4',
+                                    border: `1px solid ${u.onShift ? '#FECACA' : '#BBF7D0'}`,
+                                    color: u.onShift ? '#DC2626' : '#16A34A',
+                                    fontWeight: 600,
+                                    borderRadius: '0.375rem'
+                                }}
+                            >
+                                {u.onShift ? <><LogOut size={14} /> Cerrar Turno</> : <><CheckCircle size={14} /> Habilitar Turno</>}
+                            </button>
+                        </div>
+                    );
+                })}
             </div>
         </div>
     )
