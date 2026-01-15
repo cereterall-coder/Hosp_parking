@@ -767,14 +767,14 @@ function SystemUsersView() {
             </div>
 
             {showForm && (
-                <div className="card fade-in" style={{ marginBottom: '1rem', borderLeft: '4px solid #2563EB', position: 'relative', padding: '1rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', paddingBottom: '0.75rem', borderBottom: '1px solid #F1F5F9' }}>
-                        <div style={{ background: '#EFF6FF', padding: '0.4rem', borderRadius: '50%', color: '#2563EB' }}>
-                            <Shield size={18} />
+                <div className="card fade-in" style={{ marginBottom: '1rem', borderLeft: '4px solid #2563EB', position: 'relative', padding: '0.75rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', paddingBottom: '0.5rem', borderBottom: '1px solid #F1F5F9' }}>
+                        <div style={{ background: '#EFF6FF', padding: '0.3rem', borderRadius: '50%', color: '#2563EB' }}>
+                            <Shield size={16} />
                         </div>
                         <div>
-                            <h4 style={{ margin: 0, fontSize: '1rem', color: '#1E293B' }}>Nueva Credencial</h4>
-                            <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748B' }}>Complete los datos.</p>
+                            <h4 style={{ margin: 0, fontSize: '0.95rem', color: '#1E293B' }}>Nueva Credencial</h4>
+                            <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748B' }}>Complete los datos.</p>
                         </div>
                     </div>
 
@@ -782,75 +782,77 @@ function SystemUsersView() {
 
                     <form onSubmit={handleCreate}>
                         {/* Datos Personales */}
-                        <div style={{ marginBottom: '1rem' }}>
-                            <h5 style={{ fontSize: '0.85rem', color: '#64748B', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>Información Personal</h5>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
-                                <div className="input-group">
-                                    <label className="label">DNI</label>
-                                    <input className="input" required value={newUser.dni} onChange={e => setNewUser({ ...newUser, dni: e.target.value })} placeholder="Ej: 12345678" />
+                        <div style={{ marginBottom: '0.75rem' }}>
+                            <h5 style={{ fontSize: '0.75rem', color: '#64748B', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>Información Personal</h5>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.5rem' }}>
+                                <div className="input-group" style={{ marginBottom: 0 }}>
+                                    <label className="label" style={{ fontSize: '0.75rem', marginBottom: '0.25rem' }}>DNI</label>
+                                    <input className="input" required value={newUser.dni} onChange={e => setNewUser({ ...newUser, dni: e.target.value })} placeholder="DNI" style={{ padding: '0.4rem' }} />
                                 </div>
-                                <div className="input-group" style={{ gridColumn: 'span 2' }}>
-                                    <label className="label">Nombres y Apellidos</label>
-                                    <input className="input" required value={newUser.fullName} onChange={e => setNewUser({ ...newUser, fullName: e.target.value })} placeholder="Nombre Completo" />
+                                <div className="input-group" style={{ gridColumn: 'span 2', marginBottom: 0 }}>
+                                    <label className="label" style={{ fontSize: '0.75rem', marginBottom: '0.25rem' }}>Nombres y Apellidos</label>
+                                    <input className="input" required value={newUser.fullName} onChange={e => setNewUser({ ...newUser, fullName: e.target.value })} placeholder="Nombre Completo" style={{ padding: '0.4rem' }} />
                                 </div>
-                                <div className="input-group">
-                                    <label className="label">Teléfono</label>
-                                    <input className="input" value={newUser.phone} onChange={e => setNewUser({ ...newUser, phone: e.target.value })} placeholder="Celular" />
+                                <div className="input-group" style={{ marginBottom: 0 }}>
+                                    <label className="label" style={{ fontSize: '0.75rem', marginBottom: '0.25rem' }}>Teléfono</label>
+                                    <input className="input" value={newUser.phone} onChange={e => setNewUser({ ...newUser, phone: e.target.value })} placeholder="Celular" style={{ padding: '0.4rem' }} />
                                 </div>
-                                <div className="input-group">
-                                    <label className="label">Hospital / Sede</label>
-                                    <input className="input" value={newUser.hospital} onChange={e => setNewUser({ ...newUser, hospital: e.target.value })} placeholder="Ej: Hospital Central" />
+                                <div className="input-group" style={{ marginBottom: 0 }}>
+                                    <label className="label" style={{ fontSize: '0.75rem', marginBottom: '0.25rem' }}>Sede</label>
+                                    <input className="input" value={newUser.hospital} onChange={e => setNewUser({ ...newUser, hospital: e.target.value })} placeholder="Sede" style={{ padding: '0.4rem' }} />
                                 </div>
-                                <div className="input-group">
-                                    <label className="label">Puerta Asignada</label>
-                                    <input className="input" value={newUser.gate} onChange={e => setNewUser({ ...newUser, gate: e.target.value })} placeholder="Ej: Puerta 1" />
+                                <div className="input-group" style={{ marginBottom: 0 }}>
+                                    <label className="label" style={{ fontSize: '0.75rem', marginBottom: '0.25rem' }}>Puerta</label>
+                                    <input className="input" value={newUser.gate} onChange={e => setNewUser({ ...newUser, gate: e.target.value })} placeholder="N°" style={{ padding: '0.4rem' }} />
                                 </div>
                             </div>
                         </div>
 
                         {/* Credenciales */}
-                        <div style={{ marginBottom: '1.5rem', paddingTop: '1rem', borderTop: '1px solid #F1F5F9' }}>
-                            <h5 style={{ fontSize: '0.85rem', color: '#64748B', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>Credenciales de Acceso</h5>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
-                                <div className="input-group">
-                                    <label className="label">Usuario Sistema</label>
+                        <div style={{ marginBottom: '1rem', paddingTop: '0.75rem', borderTop: '1px solid #F1F5F9' }}>
+                            <h5 style={{ fontSize: '0.75rem', color: '#64748B', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>Credenciales</h5>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.5rem' }}>
+                                <div className="input-group" style={{ marginBottom: 0 }}>
+                                    <label className="label" style={{ fontSize: '0.75rem', marginBottom: '0.25rem' }}>Usuario</label>
                                     <input
                                         className="input"
                                         required
                                         value={newUser.username}
                                         onChange={e => setNewUser({ ...newUser, username: e.target.value.replace(/\s/g, '') })}
-                                        placeholder="Ej: agente.torres"
-                                        style={{ fontFamily: 'monospace' }}
+                                        placeholder="Ej: usuario"
+                                        style={{ fontFamily: 'monospace', padding: '0.4rem' }}
                                     />
                                 </div>
-                                <div className="input-group">
-                                    <label className="label">Contraseña</label>
+                                <div className="input-group" style={{ marginBottom: 0 }}>
+                                    <label className="label" style={{ fontSize: '0.75rem', marginBottom: '0.25rem' }}>Contraseña</label>
                                     <input
                                         type="password"
                                         className="input"
                                         required
                                         value={newUser.password}
                                         onChange={e => setNewUser({ ...newUser, password: e.target.value })}
-                                        placeholder="Min. 6 caracteres"
+                                        placeholder="******"
+                                        style={{ padding: '0.4rem' }}
                                     />
                                 </div>
-                                <div className="input-group">
-                                    <label className="label">Rol de Usuario</label>
+                                <div className="input-group" style={{ marginBottom: 0 }}>
+                                    <label className="label" style={{ fontSize: '0.75rem', marginBottom: '0.25rem' }}>Rol</label>
                                     <select
                                         className="input"
                                         value={newUser.role}
                                         onChange={e => setNewUser({ ...newUser, role: e.target.value })}
+                                        style={{ padding: '0.4rem' }}
                                     >
-                                        <option value="agent">Agente (Móvil)</option>
+                                        <option value="agent">Agente</option>
                                         <option value="supervisor">Supervisor</option>
-                                        <option value="admin">Administrador</option>
+                                        <option value="admin">Admin</option>
                                     </select>
                                 </div>
                             </div>
                         </div>
 
                         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                            <button type="submit" className="btn btn-primary" disabled={loading} style={{ padding: '0.75rem 2rem', fontWeight: 600 }}>
+                            <button type="submit" className="btn btn-primary" disabled={loading} style={{ padding: '0.5rem 1.5rem', fontWeight: 600, fontSize: '0.9rem' }}>
                                 {loading ? 'Creando...' : 'Crear Usuario'}
                             </button>
                         </div>
