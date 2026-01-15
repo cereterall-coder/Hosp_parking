@@ -272,62 +272,130 @@ function KPICard({ title, value, icon, color, trend }) {
 }
 
 function PersonnelView({ isMobile }) {
-    // ... existing logic ...
     const [personnel, setPersonnel] = useState([]);
     const [showForm, setShowForm] = useState(false);
     const [newItem, setNewItem] = useState({ fullName: '', dni: '', role: '', licensePlate: '', vehicleType: 'auto' });
+    const [uploading, setUploading] = useState(false);
 
     useEffect(() => {
         const q = query(collection(db, "personnel"), orderBy("createdAt", "desc"));
-        const unsubscribe = onSnapshot(q, (snap) => setPersonnel(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+        const unsubscribe = onSnapshot(q, (snap) => {
+            setPersonnel(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        });
         return unsubscribe;
     }, []);
 
-    // ... handleSubmit ...
     const handleSubmit = async (e) => {
         e.preventDefault();
-        // ... (Keep existing submit logic)
-        const names = newItem.fullName.split(' ');
-        const firstName = names[0];
-        const lastName = names.slice(1).join(' ') || '';
+        if (!newItem.fullName || !newItem.licensePlate) return;
 
-        await addDoc(collection(db, "personnel"), {
-            firstName,
-            lastName,
-            fullName: newItem.fullName, // Keep full name for future use
-            dni: newItem.dni,
-            role: newItem.role,
-            licensePlate: newItem.licensePlate.toUpperCase(),
-            vehicleType: newItem.vehicleType,
-            createdAt: serverTimestamp()
-        });
-        setShowForm(false);
-        setNewItem({ fullName: '', dni: '', role: '', licensePlate: '', vehicleType: 'auto' });
-        alert('Personal registrado correctamente');
+        try {
+            const names = newItem.fullName.split(' ');
+            const firstName = names[0];
+            const lastName = names.slice(1).join(' ') || '';
+
+            await addDoc(collection(db, "personnel"), {
+                firstName,
+                lastName,
+                fullName: newItem.fullName,
+                dni: newItem.dni,
+                role: newItem.role,
+                licensePlate: newItem.licensePlate.toUpperCase(),
+                vehicleType: newItem.vehicleType,
+                createdAt: serverTimestamp()
+            });
+            setShowForm(false);
+            setNewItem({ fullName: '', dni: '', role: '', licensePlate: '', vehicleType: 'auto' });
+        } catch (error) {
+            console.error("Error creating personal:", error);
+            alert("Error al guardar personal");
+        }
     };
 
-    // ... handleDelete ...
     const handleDelete = async (id) => {
-        if (confirm('¿Seguro de eliminar a este personal?')) await deleteDoc(doc(db, "personnel", id));
+        if (confirm('¿Seguro de eliminar a este personal?')) {
+            try {
+                await deleteDoc(doc(db, "personnel", id));
+            } catch (error) {
+                console.error("Error creating personal:", error);
+            }
+        }
     }
 
-    // ... handleFileUpload ...
-    const [uploading, setUploading] = useState(false);
     const handleFileUpload = async (e) => {
-        // ... (Keep existing logic)
-    }
+        const file = e.target.files[0];
+        if (!file) return;
 
+        setUploading(true);
+        const reader = new FileReader();
+
+        reader.onload = async (evt) => {
+            try {
+                const bstr = evt.target.result;
+                const wb = XLSX.read(bstr, { type: 'binary' });
+                const wsname = wb.SheetNames[0];
+                const ws = wb.Sheets[wsname];
+                const data = XLSX.utils.sheet_to_json(ws);
+
+                const batch = writeBatch(db);
+                let count = 0;
+
+                for (const row of data) {
+                    if (row.Nombre && row.Placa) {
+                        const newRef = doc(collection(db, "personnel"));
+                        const names = row.Nombre.toString().split(' ');
+
+                        batch.set(newRef, {
+                            firstName: names[0] || '',
+                            lastName: names.slice(1).join(' ') || '',
+                            fullName: row.Nombre.toString(),
+                            dni: row.DNI ? row.DNI.toString() : '',
+                            role: row.Cargo || 'Personal',
+                            licensePlate: row.Placa.toString().toUpperCase().replace(/\s/g, ''),
+                            vehicleType: 'auto',
+                            createdAt: serverTimestamp()
+                        });
+                        count++;
+                    }
+                }
+
+                await batch.commit();
+                alert(`Se importaron ${count} registros correctamente.`);
+            } catch (error) {
+                console.error("Error parsing Excel:", error);
+                alert("Error al procesar el archivo Excel. Verifique el formato.");
+            }
+            setUploading(false);
+        };
+        reader.readAsBinaryString(file);
+    };
 
     return (
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-            {/* Header Adjustments */}
             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', marginBottom: '2rem', alignItems: isMobile ? 'flex-start' : 'center', gap: '1rem' }}>
                 <div>
                     <h3 style={{ fontSize: '1.5rem', marginBottom: '0.25rem', color: '#0F172A' }}>Personal Autorizado</h3>
                     <p className="text-muted">Directorio de personal médico y administrativo.</p>
                 </div>
-                {/* Mobile Actions Stack */}
+
                 <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', width: isMobile ? '100%' : 'auto' }}>
+
+                    {!isMobile && (
+                        <div style={{ position: 'relative' }}>
+                            <input
+                                type="file"
+                                accept=".xlsx, .xls"
+                                onChange={handleFileUpload}
+                                style={{ position: 'absolute', opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }}
+                                disabled={uploading}
+                            />
+                            <button className="btn btn-outline" disabled={uploading}>
+                                <UploadCloud size={18} />
+                                {uploading ? 'Cargando...' : 'Importar Excel'}
+                            </button>
+                        </div>
+                    )}
+
                     <button
                         className={`btn ${showForm ? 'btn-outline' : 'btn-primary'}`}
                         onClick={() => setShowForm(!showForm)}
@@ -338,30 +406,35 @@ function PersonnelView({ isMobile }) {
                 </div>
             </div>
 
-            {/* Form */}
             {showForm && (
                 <div className="card fade-in" style={{ marginBottom: '2rem', borderLeft: '4px solid #10B981' }}>
-                    {/* ... Form input fields (simplify grid for mobile) ... */}
                     <form onSubmit={handleSubmit}>
                         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
                             <div className="input-group">
                                 <label className="label">Nombre Completo</label>
-                                <input className="input" required value={newItem.fullName} onChange={e => setNewItem({ ...newItem, fullName: e.target.value })} />
+                                <input className="input" required value={newItem.fullName} onChange={e => setNewItem({ ...newItem, fullName: e.target.value })} placeholder="Ej: Dr. Juan Perez" />
                             </div>
                             <div className="input-group">
                                 <label className="label">DNI</label>
-                                <input className="input" required value={newItem.dni} onChange={e => setNewItem({ ...newItem, dni: e.target.value })} />
+                                <input className="input" value={newItem.dni} onChange={e => setNewItem({ ...newItem, dni: e.target.value })} placeholder="Opcional" />
                             </div>
                             <div className="input-group">
                                 <label className="label">Cargo</label>
-                                <input className="input" required value={newItem.role} onChange={e => setNewItem({ ...newItem, role: e.target.value })} />
+                                <input className="input" required value={newItem.role} onChange={e => setNewItem({ ...newItem, role: e.target.value })} placeholder="Ej: Pediatría" />
                             </div>
                             <div className="input-group">
                                 <label className="label">Placa</label>
-                                <input className="input" required value={newItem.licensePlate} onChange={e => setNewItem({ ...newItem, licensePlate: e.target.value.toUpperCase() })} />
+                                <input className="input" required value={newItem.licensePlate} onChange={e => setNewItem({ ...newItem, licensePlate: e.target.value.toUpperCase() })} placeholder="ABC-123" />
                             </div>
                             <div className="input-group">
-                                <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1.5rem' }}>Guardar</button>
+                                <label className="label">Tipo</label>
+                                <select className="input" value={newItem.vehicleType} onChange={e => setNewItem({ ...newItem, vehicleType: e.target.value })}>
+                                    <option value="auto">Auto</option>
+                                    <option value="moto">Moto</option>
+                                </select>
+                            </div>
+                            <div className="input-group" style={{ display: 'flex', alignItems: 'flex-end' }}>
+                                <button type="submit" className="btn btn-primary" style={{ width: '100%', height: '48px' }}>Guardar</button>
                             </div>
                         </div>
                     </form>
@@ -370,29 +443,48 @@ function PersonnelView({ isMobile }) {
 
             <div className="grid-dashboard" style={{ gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(300px, 1fr))' }}>
                 {personnel.map(p => (
-                    <div key={p.id} className="card" style={{ position: 'relative' }}>
+                    <div key={p.id || Math.random()} className="card" style={{ position: 'relative' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
                             <div style={{
                                 width: '48px', height: '48px',
                                 background: '#EFF6FF', borderRadius: '12px',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                color: '#2563EB', fontWeight: 'bold'
+                                color: '#2563EB', fontWeight: 'bold', fontSize: '1.2rem'
                             }}>
-                                {p.firstName?.[0] || '?'}{p.lastName?.[0] || ''}
+                                {(p.firstName && p.firstName[0]) ? p.firstName[0] : (p.fullName ? p.fullName[0] : '?')}
                             </div>
-                            <div>
-                                <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>{p.firstName} {p.lastName}</h3>
-                                <span style={{ color: '#64748B', fontSize: '0.85rem' }}>{p.role}</span>
+                            <div style={{ overflow: 'hidden' }}>
+                                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {p.firstName ? `${p.firstName} ${p.lastName || ''}` : p.fullName}
+                                </h3>
+                                <div style={{ color: '#64748B', fontSize: '0.85rem' }}>{p.role}</div>
                             </div>
                         </div>
                         <div style={{ background: '#F8FAFC', padding: '1rem', borderRadius: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{p.licensePlate}</span>
-                            <div className={`badge ${p.vehicleType === 'moto' ? 'badge-warning' : 'badge-primary'}`}>{p.vehicleType}</div>
+                            <span style={{ fontFamily: 'monospace', fontWeight: 'bold', fontSize: '1.1rem' }}>{p.licensePlate}</span>
+                            <div className={`badge ${p.vehicleType === 'moto' ? 'badge-warning' : 'badge-primary'}`}>
+                                {p.vehicleType === 'moto' ? 'Moto' : 'Auto'}
+                            </div>
                         </div>
                         <button className="btn-icon" onClick={() => handleDelete(p.id)} style={{ position: 'absolute', top: '1rem', right: '1rem', color: '#EF4444' }}><Trash2 size={16} /></button>
                     </div>
                 ))}
             </div>
+
+            {personnel.length === 0 && (
+                <div style={{
+                    textAlign: 'center',
+                    padding: '4rem 1rem',
+                    color: '#94A3B8',
+                    background: '#F8FAFC',
+                    borderRadius: '1rem',
+                    border: '2px dashed #E2E8F0',
+                    marginTop: '2rem'
+                }}>
+                    <Users size={48} style={{ opacity: 0.5, marginBottom: '1rem' }} />
+                    <p>No hay personal registrado aún.</p>
+                </div>
+            )}
         </div>
     );
 }
