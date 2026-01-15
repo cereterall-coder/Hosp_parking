@@ -143,7 +143,7 @@ export default function AdminDashboard() {
                         </div>
                         <div>
                             <p style={{ fontSize: '0.9rem', fontWeight: '500', textTransform: 'capitalize' }}>{userRole}</p>
-                            <p style={{ fontSize: '0.75rem', color: '#94A3B8' }}>v2.5 (Fixed)</p>
+                            <p style={{ fontSize: '0.75rem', color: '#94A3B8' }}>v3.5 - LITE</p>
                         </div>
                     </div>
                     <button onClick={() => signOut(auth)} className="btn btn-outline" style={{ width: '100%', borderColor: '#334155', background: 'transparent', color: '#CBD5E1' }}>
