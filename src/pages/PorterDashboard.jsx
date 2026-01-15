@@ -6,6 +6,18 @@ import { Camera, LogOut, Search, CheckCircle, AlertCircle, Car, Bike, ArrowLeft,
 import Tesseract from 'tesseract.js';
 
 export default function PorterDashboard() {
+    const [currentUser, setCurrentUser] = useState(null);
+
+    useEffect(() => {
+        if (auth.currentUser) {
+            import("firebase/firestore").then(({ getDoc, doc }) => {
+                getDoc(doc(db, "users", auth.currentUser.uid)).then(d => {
+                    if (d.exists()) setCurrentUser(d.data());
+                });
+            });
+        }
+    }, []);
+
     return (
         <div style={{ paddingBottom: '80px', minHeight: '100vh', background: '#F8FAFC' }}>
             <header style={{
@@ -15,8 +27,21 @@ export default function PorterDashboard() {
                 borderBottom: '1px solid #E2E8F0',
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <h2 style={{ fontSize: '1.1rem', color: '#1E293B', fontWeight: '700' }}>Panel de Agente</h2>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <h2 style={{ fontSize: '1.1rem', color: '#1E293B', fontWeight: '700', margin: 0 }}>Panel de Agente</h2>
+                        {currentUser && (
+                            <div style={{ fontSize: '0.75rem', color: '#2563EB', fontWeight: 600, display: 'flex', gap: '0.25rem' }}>
+                                <span>{currentUser.hospital || 'Sede Principal'}</span>
+                                {currentUser.role !== 'supervisor' && (
+                                    <>
+                                        <span style={{ color: '#CBD5E1' }}>|</span>
+                                        <span>{currentUser.gate || 'Entrada Principal'}</span>
+                                    </>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
                 <button onClick={() => signOut(auth)} className="btn-icon" style={{ color: '#EF4444', background: '#FEF2F2' }}>
                     <LogOut size={20} />
@@ -24,13 +49,13 @@ export default function PorterDashboard() {
             </header>
 
             <div className="main-content" style={{ padding: '1.5rem' }}>
-                <UnifiedOperationFlow />
+                <UnifiedOperationFlow currentUser={currentUser} />
             </div>
         </div>
     );
 }
 
-function UnifiedOperationFlow() {
+function UnifiedOperationFlow({ currentUser }) {
     const [step, setStep] = useState('scan'); // 'scan' | 'entry' | 'exit'
     const [plate, setPlate] = useState('');
     const [loading, setLoading] = useState(false);
@@ -85,18 +110,8 @@ function UnifiedOperationFlow() {
         setMessage(null);
     }
 
-    const [currentUser, setCurrentUser] = useState(null);
+    // currentUser passed as prop now
 
-    // Fetch context on mount
-    useEffect(() => {
-        if (auth.currentUser) {
-            import("firebase/firestore").then(({ getDoc, doc }) => {
-                getDoc(doc(db, "users", auth.currentUser.uid)).then(d => {
-                    if (d.exists()) setCurrentUser(d.data());
-                });
-            });
-        }
-    }, []);
 
     if (step === 'scan') {
         return (
