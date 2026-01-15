@@ -932,3 +932,134 @@ function SystemUsersView() {
         </div>
     );
 }
+
+function LocationsView({ isMobile }) {
+    const [locations, setLocations] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [newLocName, setNewLocName] = useState('');
+
+    useEffect(() => {
+        const q = query(collection(db, "locations"), orderBy("name"));
+        const unsubscribe = onSnapshot(q, (snap) => setLocations(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+        return unsubscribe;
+    }, []);
+
+    const handleAddLoc = async (e) => {
+        e.preventDefault();
+        if (!newLocName.trim()) return;
+        setLoading(true);
+        try {
+            await addDoc(collection(db, "locations"), {
+                name: newLocName.trim(),
+                gates: ['Principal'] // Default gate
+            });
+            setNewLocName('');
+        } catch (error) {
+            console.error(error);
+            alert("Error al crear sede");
+        }
+        setLoading(false);
+    };
+
+    const handleDeleteLoc = async (id) => {
+        if (!confirm("¿Eliminar esta sede y todas sus configuraciones?")) return;
+        try { await deleteDoc(doc(db, "locations", id)); } catch (e) { alert("Error al eliminar"); }
+    };
+
+    const handleAddGate = async (loc, newGateName) => {
+        if (!newGateName.trim()) return;
+        const updatedGates = [...(loc.gates || []), newGateName.trim()];
+        await updateDoc(doc(db, "locations", loc.id), { gates: updatedGates });
+    };
+
+    const handleRemoveGate = async (loc, gateIdx) => {
+        if (!confirm("¿Eliminar esta puerta?")) return;
+        const updatedGates = loc.gates.filter((_, i) => i !== gateIdx);
+        await updateDoc(doc(db, "locations", loc.id), { gates: updatedGates });
+    };
+
+    return (
+        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+            <div className="card fade-in" style={{ padding: '1.5rem', marginBottom: '2rem' }}>
+                <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem', color: '#1E293B', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Building2 size={22} className="text-primary" /> Agregar Nueva Sede
+                </h3>
+                <form onSubmit={handleAddLoc} style={{ display: 'flex', gap: '1rem' }}>
+                    <input
+                        className="input"
+                        value={newLocName}
+                        onChange={e => setNewLocName(e.target.value)}
+                        placeholder="Nombre de la Sede/Hospital"
+                        required
+                        style={{ flex: 1 }}
+                    />
+                    <button type="submit" className="btn btn-primary" disabled={loading}>
+                        {loading ? '...' : <><Plus size={18} /> Agregar</>}
+                    </button>
+                </form>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                {locations.map(loc => (
+                    <div key={loc.id} className="card fade-in" style={{ padding: '1.5rem', position: 'relative', borderTop: '4px solid #2563EB' }}>
+                        <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
+                            <button onClick={() => handleDeleteLoc(loc.id)} style={{ color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem' }} title="Eliminar Sede">
+                                <Trash2 size={16} />
+                            </button>
+                        </div>
+                        <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1.5rem', color: '#1E293B', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Building2 size={18} className="text-primary" />
+                            {loc.name}
+                        </h4>
+
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <h5 style={{ fontSize: '0.75rem', color: '#64748B', marginBottom: '0.75rem', textTransform: 'uppercase', fontWeight: 600 }}>Puertas de Acceso</h5>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                {(loc.gates || []).map((g, idx) => (
+                                    <div key={idx} className="badge badge-outline" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', paddingRight: '0.5rem', background: 'white' }}>
+                                        <MapPin size={12} className="text-muted" /> {g}
+                                        <span
+                                            onClick={() => handleRemoveGate(loc, idx)}
+                                            style={{ cursor: 'pointer', marginLeft: 'auto', color: '#EF4444', display: 'flex', alignItems: 'center', padding: '2px', borderRadius: '4px' }}
+                                            className="hover:bg-red-50"
+                                        >
+                                            <X size={12} />
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid #F1F5F9' }}>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <input
+                                    id={`new-gate-${loc.id}`}
+                                    className="input"
+                                    placeholder="Nueva Puerta..."
+                                    style={{ padding: '0.4rem', fontSize: '0.85rem' }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            handleAddGate(loc, e.target.value);
+                                            e.target.value = '';
+                                        }
+                                    }}
+                                />
+                                <button
+                                    className="btn btn-sm btn-outline"
+                                    onClick={() => {
+                                        const input = document.getElementById(`new-gate-${loc.id}`);
+                                        handleAddGate(loc, input.value);
+                                        input.value = '';
+                                    }}
+                                >
+                                    <Plus size={14} />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+            {locations.length === 0 && <p className="text-muted" style={{ textAlign: 'center', marginTop: '3rem' }}>No hay sedes registradas. Agregue una para comenzar.</p>}
+        </div>
+    );
+}
