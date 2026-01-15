@@ -138,11 +138,11 @@ export default function AdminDashboard() {
             {/* Main Content Area */}
             <main className="main-content" style={{
                 flex: 1,
-                padding: isMobile ? '1rem' : '2rem',
+                padding: isMobile ? '0.5rem' : '1rem', // Reduced padding
                 overflowY: 'auto'
             }}>
                 <div className="fade-in">
-                    <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                    <header style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
                         <div>
                             <h2 style={{ fontSize: isMobile ? '1.5rem' : '1.8rem', lineHeight: 1.2 }}>
                                 {activeTab === 'dashboard' && 'Visión General'}
@@ -154,8 +154,8 @@ export default function AdminDashboard() {
                         </div>
                         {/* Only show "Sistema Operativo" badge on Desktop to save space */}
                         {!isMobile && (
-                            <div className="badge badge-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem' }}>
-                                <div style={{ width: '8px', height: '8px', background: '#22C55E', borderRadius: '50%' }}></div>
+                            <div className="badge badge-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}>
+                                <div style={{ width: '6px', height: '6px', background: '#22C55E', borderRadius: '50%' }}></div>
                                 Sistema Operativo
                             </div>
                         )}
@@ -216,23 +216,24 @@ function DashboardView({ isMobile }) {
     return (
         <div>
             <div className="grid-dashboard" style={{
-                gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))'
+                gridTemplateColumns: isMobile ? '1fr ' : 'repeat(auto-fit, minmax(240px, 1fr))',
+                gap: '0.5rem', marginBottom: '0.5rem'
             }}>
                 <KPICard title="Total Vehículos" value={vehicles.length} icon={<Car size={28} />} color="blue" trend="+12% vs ayer" />
                 <KPICard title="Autos" value={autos} icon={<Car size={28} />} color="indigo" />
                 <KPICard title="Motos" value={motos} icon={<Bike size={28} />} color="purple" />
             </div>
 
-            {/* Top 5 Longest Stays */}
-            <div className="card" style={{ marginBottom: '2rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                    <div style={{ background: '#FEF2F2', padding: '0.5rem', borderRadius: '0.5rem', color: '#DC2626' }}>
-                        <Clock size={20} />
+            {/* Top 5 Longest Stays - Compact */}
+            <div className="card" style={{ marginBottom: '0.5rem', padding: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                    <div style={{ background: '#FEF2F2', padding: '0.25rem', borderRadius: '0.25rem', color: '#DC2626' }}>
+                        <Clock size={16} />
                     </div>
-                    <h3 style={{ fontSize: '1.2rem', margin: 0 }}>Mayor Estancia (Top 5)</h3>
+                    <h3 style={{ fontSize: '1rem', margin: 0 }}>Mayor Estancia (Top 5)</h3>
                 </div>
                 <div style={{ overflowX: 'auto' }}>
-                    <div style={{ display: 'flex', gap: '1rem', paddingBottom: '0.5rem' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', paddingBottom: '0.25rem' }}>
                         {vehicles
                             .map(v => ({
                                 ...v,
@@ -245,69 +246,69 @@ function DashboardView({ isMobile }) {
                                 const minutes = Math.floor((v.durationMs % (1000 * 60 * 60)) / (1000 * 60));
                                 return (
                                     <div key={v.id} style={{
-                                        minWidth: '200px',
+                                        minWidth: '160px',
                                         background: i === 0 ? '#FEF2F2' : '#F8FAFC',
                                         border: i === 0 ? '1px solid #FECACA' : '1px solid #E2E8F0',
-                                        borderRadius: '0.75rem',
-                                        padding: '1rem',
+                                        borderRadius: '0.5rem',
+                                        padding: '0.5rem',
                                         flex: 1
                                     }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                            <span style={{ fontWeight: 'bold', fontFamily: 'monospace', fontSize: '1.1rem' }}>{v.plate}</span>
-                                            <span className={`badge ${i === 0 ? 'badge-danger' : 'badge-primary'}`}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                                            <span style={{ fontWeight: 'bold', fontFamily: 'monospace', fontSize: '0.9rem' }}>{v.plate}</span>
+                                            <span className={`badge ${i === 0 ? 'badge-danger' : 'badge-primary'}`} style={{ fontSize: '0.7rem', padding: '0.1rem 0.3rem' }}>
                                                 #{i + 1}
                                             </span>
                                         </div>
-                                        <div style={{ fontSize: '0.9rem', color: '#64748B', marginBottom: '0.25rem' }}>
-                                            {v.driverName || 'Conductor desconocido'}
+                                        <div style={{ fontSize: '0.8rem', color: '#64748B', marginBottom: '0.1rem' }}>
+                                            {v.driverName ? v.driverName.substring(0, 15) + (v.driverName.length > 15 ? '...' : '') : 'Desc.'}
                                         </div>
-                                        <div style={{ fontWeight: 'bold', color: i === 0 ? '#DC2626' : '#0F172A', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                            <Clock size={16} />
+                                        <div style={{ fontWeight: 'bold', fontSize: '0.85rem', color: i === 0 ? '#DC2626' : '#0F172A', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                            <Clock size={12} />
                                             {hours}h {minutes}m
                                         </div>
                                     </div>
                                 );
                             })}
-                        {vehicles.length === 0 && <p className="text-muted" style={{ padding: '1rem' }}>No hay vehículos registrados.</p>}
+                        {vehicles.length === 0 && <p className="text-muted" style={{ padding: '0.5rem', fontSize: '0.8rem' }}>Sin vehículos.</p>}
                     </div>
                 </div>
             </div>
             {/* ... Table logic ... */}
-            <div className="card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-                    <h3>Ocupación Actual</h3>
-                    <div className="input-group" style={{ marginBottom: 0, width: '100%', maxWidth: '300px' }}>
-                        <input className="input" placeholder="Buscar placa..." style={{ padding: '0.5rem 1rem' }} />
+            <div className="card" style={{ padding: '0.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <h3 style={{ fontSize: '1rem', margin: 0 }}>Ocupación Actual</h3>
+                    <div className="input-group" style={{ marginBottom: 0, width: '100%', maxWidth: '200px' }}>
+                        <input className="input" placeholder="Buscar..." style={{ padding: '0.25rem 0.5rem', fontSize: '0.85rem' }} />
                     </div>
                 </div>
 
                 <div className="table-container">
-                    <table>
+                    <table style={{ fontSize: '0.85rem' }}>
                         <thead>
                             <tr>
-                                <th>Placa</th>
-                                <th>Conductor</th>
-                                {!isMobile && <th>Vehículo</th>}
-                                <th>Tipo</th>
-                                {!isMobile && <th>Tiempo</th>}
-                                {!isMobile && <th>Estado</th>}
+                                <th style={{ padding: '0.5rem' }}>Placa</th>
+                                <th style={{ padding: '0.5rem' }}>Conductor</th>
+                                {!isMobile && <th style={{ padding: '0.5rem' }}>Vehículo</th>}
+                                <th style={{ padding: '0.5rem' }}>Tipo</th>
+                                {!isMobile && <th style={{ padding: '0.5rem' }}>Tiempo</th>}
+                                {!isMobile && <th style={{ padding: '0.5rem' }}>Estado</th>}
                             </tr>
                         </thead>
                         <tbody>
                             {vehicles.map(v => (
                                 <tr key={v.id}>
-                                    <td><span style={{ fontFamily: 'monospace', fontWeight: 'bold', background: '#F1F5F9', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>{v.plate}</span></td>
-                                    <td>
+                                    <td style={{ padding: '0.5rem' }}><span style={{ fontFamily: 'monospace', fontWeight: 'bold', background: '#F1F5F9', padding: '0.1rem 0.3rem', borderRadius: '3px' }}>{v.plate}</span></td>
+                                    <td style={{ padding: '0.5rem' }}>
                                         <div style={{ fontWeight: 500 }}>{v.driverName}</div>
                                     </td>
-                                    {!isMobile && <td style={{ textTransform: 'capitalize' }}>{v.vehicleType}</td>}
-                                    <td>
+                                    {!isMobile && <td style={{ textTransform: 'capitalize', padding: '0.5rem' }}>{v.vehicleType}</td>}
+                                    <td style={{ padding: '0.5rem' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#64748B' }}>
-                                            <Clock size={14} />
+                                            <Clock size={12} />
                                             {v.entryTime && v.entryTime.toDate ? v.entryTime.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
                                         </div>
                                     </td>
-                                    <td><span className="badge badge-success">Activo</span></td>
+                                    <td style={{ padding: '0.5rem' }}><span className="badge badge-success" style={{ fontSize: '0.7rem', padding: '0.1rem 0.3rem' }}>Activo</span></td>
                                 </tr>
                             ))}
                         </tbody>
@@ -337,19 +338,19 @@ function KPICard({ title, value, icon, color, trend }) {
     };
 
     return (
-        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.5rem' }}>
+        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem' }}>
             <div style={{
                 background: bgColors[color] || bgColors.blue,
-                padding: '1rem', borderRadius: '1rem',
+                padding: '0.5rem', borderRadius: '0.75rem',
                 color: textColors[color] || textColors.blue,
                 display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}>
-                {icon}
+                {React.cloneElement(icon, { size: 20 })}
             </div>
             <div>
-                <p style={{ color: '#64748B', fontSize: '0.9rem', marginBottom: '0.25rem', fontWeight: 500 }}>{title}</p>
-                <h3 style={{ fontSize: '1.8rem', fontWeight: 700, margin: 0, lineHeight: 1 }}>{value}</h3>
-                {trend && <div style={{ fontSize: '0.75rem', color: '#16A34A', marginTop: '0.25rem', fontWeight: 500 }}>{trend}</div>}
+                <p style={{ color: '#64748B', fontSize: '0.75rem', marginBottom: '0', fontWeight: 500 }}>{title}</p>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, lineHeight: 1 }}>{value}</h3>
+                {trend && <div style={{ fontSize: '0.65rem', color: '#16A34A', marginTop: '0', fontWeight: 500 }}>{trend}</div>}
             </div>
         </div>
     );
