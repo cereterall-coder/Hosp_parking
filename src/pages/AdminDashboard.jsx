@@ -48,7 +48,7 @@ export default function AdminDashboard() {
         const handleError = (msg, url, lineNo, columnNo, error) => {
             // Only alert if it's not aResizeObserver error which is common and harmless
             if (!msg.includes('ResizeObserver')) {
-                alert(`Error: ${msg} \nLine: ${lineNo}`);
+                alert(`MSG: ${msg}\nFILE: ${url}\nLINE: ${lineNo}\nSTACK: ${error?.stack}`);
             }
             return false;
         };
