@@ -42,29 +42,11 @@ export default function AdminDashboard() {
     const { userRole } = useAuth();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-    console.log("AdminDashboard Loaded - v3.2 FORCED UPDATE");
-
-    useEffect(() => {
-        const handleError = (msg, url, lineNo, columnNo, error) => {
-            // Only alert if it's not aResizeObserver error which is common and harmless
-            if (!msg.includes('ResizeObserver')) {
-                alert(`MSG: ${msg}\nFILE: ${url}\nLINE: ${lineNo}\nSTACK: ${error?.stack}`);
-            }
-            return false;
-        };
-        const handleRejection = (event) => {
-            alert(`Promise Error: ${event.reason}`);
-        };
-        window.onerror = handleError;
-        window.onunhandledrejection = handleRejection;
-        return () => {
-            window.onerror = null;
-            window.onunhandledrejection = null;
-        };
-    }, []);
+    // console.log("AdminDashboard Loaded Clean");
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 768);
+        // ... Cleaned debug handlers ...
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
@@ -143,7 +125,7 @@ export default function AdminDashboard() {
                         </div>
                         <div>
                             <p style={{ fontSize: '0.9rem', fontWeight: '500', textTransform: 'capitalize' }}>{userRole}</p>
-                            <p style={{ fontSize: '0.75rem', color: '#94A3B8' }}>v3.5 - LITE</p>
+                            <p style={{ fontSize: '0.75rem', color: '#94A3B8' }}>Sesión Activa</p>
                         </div>
                     </div>
                     <button onClick={() => signOut(auth)} className="btn btn-outline" style={{ width: '100%', borderColor: '#334155', background: 'transparent', color: '#CBD5E1' }}>
