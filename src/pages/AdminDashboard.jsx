@@ -814,6 +814,17 @@ function SystemUsersView() {
         }
     }
 
+    const deleteUser = async (user) => {
+        if (!confirm(`¿Estás seguro de ELIMINAR al usuario ${user.username}? Esta acción no se puede deshacer.`)) return;
+        try {
+            await deleteDoc(doc(db, "users", user.id));
+            alert("Usuario eliminado correctamente.");
+        } catch (e) {
+            console.error(e);
+            alert("Error al eliminar usuario: " + e.message);
+        }
+    }
+
     return (
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem', alignItems: 'center' }}>
@@ -979,6 +990,16 @@ function SystemUsersView() {
                                     >
                                         {u.isDisabled ? <Lock size={12} /> : <ShieldCheck size={12} />}
                                         {u.isDisabled ? ' INACTIVO' : ' ACTIVO'}
+                                    </button>
+                                )}
+                                {(u.role === 'agent' || u.role === 'supervisor') && (
+                                    <button
+                                        onClick={() => deleteUser(u)}
+                                        className="badge badge-danger"
+                                        style={{ fontSize: '0.7rem', padding: '0.2rem', cursor: 'pointer', border: 'none', background: '#FEE2E2', color: '#EF4444' }}
+                                        title="Eliminar Usuario"
+                                    >
+                                        <Trash2 size={12} />
                                     </button>
                                 )}
                                 {u.onShift && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22C55E' }} title="Turno Activo"></div>}
