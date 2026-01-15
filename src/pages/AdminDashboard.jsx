@@ -44,10 +44,23 @@ export default function AdminDashboard() {
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
     // console.log("AdminDashboard Loaded Clean");
 
+    const [currentUser, setCurrentUser] = useState(null);
+
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 768);
-        // ... Cleaned debug handlers ...
         window.addEventListener('resize', handleResize);
+
+        // Fetch User Info
+        if (auth.currentUser) {
+            const unsub = onSnapshot(doc(db, "users", auth.currentUser.uid), (doc) => {
+                if (doc.exists()) setCurrentUser(doc.data());
+            });
+            return () => {
+                window.removeEventListener('resize', handleResize);
+                unsub();
+            }
+        }
+
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
@@ -67,7 +80,12 @@ export default function AdminDashboard() {
                         <div style={{ background: '#2563EB', padding: '0.4rem', borderRadius: '0.5rem' }}>
                             <Car size={20} color="white" />
                         </div>
-                        <h1 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Hospital Parking</h1>
+                        <h1 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
+                            <span>Hospital Parking</span>
+                            {userRole === 'supervisor' && currentUser?.hospital && (
+                                <span style={{ fontSize: '0.75rem', color: '#60A5FA', textTransform: 'uppercase' }}>{currentUser.hospital}</span>
+                            )}
+                        </h1>
                     </div>
                     <button onClick={toggleMenu} style={{ background: 'none', border: 'none', color: 'white' }}>
                         {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -97,8 +115,15 @@ export default function AdminDashboard() {
                             <Car size={24} color="white" />
                         </div>
                         <div>
-                            <h1 style={{ fontSize: '1.25rem', color: 'white', lineHeight: 1.2 }}>Panel Control</h1>
-                            <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>Hospital Parking</span>
+                            <h1 style={{ fontSize: '1.25rem', color: 'white', lineHeight: 1.2 }}>
+                                {userRole === 'supervisor' ? 'Supervisor' : 'Panel Control'}
+                            </h1>
+                            {userRole === 'supervisor' && currentUser?.hospital && (
+                                <p style={{ fontSize: '0.8rem', color: '#60A5FA', margin: 0, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                    {currentUser.hospital}
+                                </p>
+                            )}
+                            {userRole === 'admin' && <p style={{ fontSize: '0.8rem', color: '#94A3B8', margin: 0 }}>Administración</p>}
                         </div>
                     </div>
                 )}
