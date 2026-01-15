@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { db, auth } from '../firebase';
 import { collection, onSnapshot, query, addDoc, deleteDoc, doc, orderBy, limit, serverTimestamp, where, updateDoc, writeBatch } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
-import { LogOut, Car, Bike, Users, LayoutDashboard, History, Plus, Trash2, Search, Clock, Shield, UserPlus, UserCheck, ToggleLeft, ToggleRight, Scale, UploadCloud, FileSpreadsheet, Menu, X, ShieldCheck, Lock } from 'lucide-react';
+import { LogOut, Car, Bike, Users, LayoutDashboard, History, Plus, Trash2, Search, Clock, Shield, UserPlus, UserCheck, ToggleLeft, ToggleRight, Scale, UploadCloud, FileSpreadsheet, Menu, X, ShieldCheck, Lock, Building2, MapPin } from 'lucide-react';
 import { createSystemUser } from '../utils/adminAuth';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -110,6 +110,7 @@ export default function AdminDashboard() {
 
                     <div style={{ margin: '0.5rem 0', borderTop: '1px solid #1E293B' }}></div>
                     <NavBtn icon={<UserCheck size={20} />} label="Control de Turnos" active={activeTab === 'shifts'} onClick={() => { setActiveTab('shifts'); closeMenu(); }} />
+                    {userRole === 'admin' && <NavBtn icon={<Building2 size={20} />} label="Gestión Sedes" active={activeTab === 'locations'} onClick={() => { setActiveTab('locations'); closeMenu(); }} />}
 
                     {userRole === 'admin' && (
                         <>
@@ -150,6 +151,7 @@ export default function AdminDashboard() {
                                 {activeTab === 'history' && 'Historial de Registros'}
                                 {activeTab === 'system_users' && 'Usuarios del Sistema'}
                                 {activeTab === 'shifts' && 'Gestión de Turnos'}
+                                {activeTab === 'locations' && 'Sedes y Puertas'}
                             </h2>
                         </div>
                         {/* Only show "Sistema Operativo" badge on Desktop to save space */}
@@ -167,6 +169,7 @@ export default function AdminDashboard() {
                         {activeTab === 'history' && <HistoryView isMobile={isMobile} />}
                         {activeTab === 'system_users' && userRole === 'admin' && <SystemUsersView isMobile={isMobile} />}
                         {activeTab === 'shifts' && <ShiftsView isMobile={isMobile} />}
+                        {activeTab === 'locations' && <LocationsView isMobile={isMobile} />}
                     </ErrorBoundary>
                 </div>
             </main>
@@ -720,6 +723,16 @@ function SystemUsersView() {
         return unsubscribe;
     }, []);
 
+    // Fetch locations for dropdown
+    const [locations, setLocations] = useState([]);
+    useEffect(() => {
+        const q = query(collection(db, "locations"), orderBy("name"));
+        return onSnapshot(q, snap => setLocations(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+    }, []);
+
+    const selectedLoc = locations.find(l => l.name === newUser.hospital);
+    const availableGates = selectedLoc ? (selectedLoc.gates || []) : [];
+
     const handleCreate = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -799,11 +812,28 @@ function SystemUsersView() {
                                 </div>
                                 <div className="input-group" style={{ marginBottom: 0 }}>
                                     <label className="label" style={{ fontSize: '0.75rem', marginBottom: '0.25rem' }}>Sede</label>
-                                    <input className="input" value={newUser.hospital} onChange={e => setNewUser({ ...newUser, hospital: e.target.value })} placeholder="Sede" style={{ padding: '0.4rem' }} />
+                                    <select
+                                        className="input"
+                                        value={newUser.hospital}
+                                        onChange={e => setNewUser({ ...newUser, hospital: e.target.value, gate: '' })}
+                                        style={{ padding: '0.4rem' }}
+                                    >
+                                        <option value="">Seleccione Sede</option>
+                                        {locations.map(l => <option key={l.id} value={l.name}>{l.name}</option>)}
+                                    </select>
                                 </div>
                                 <div className="input-group" style={{ marginBottom: 0 }}>
                                     <label className="label" style={{ fontSize: '0.75rem', marginBottom: '0.25rem' }}>Puerta</label>
-                                    <input className="input" value={newUser.gate} onChange={e => setNewUser({ ...newUser, gate: e.target.value })} placeholder="N°" style={{ padding: '0.4rem' }} />
+                                    <select
+                                        className="input"
+                                        value={newUser.gate}
+                                        onChange={e => setNewUser({ ...newUser, gate: e.target.value })}
+                                        style={{ padding: '0.4rem' }}
+                                        disabled={!newUser.hospital}
+                                    >
+                                        <option value="">Seleccione Puerta</option>
+                                        {availableGates.map(g => <option key={g} value={g}>{g}</option>)}
+                                    </select>
                                 </div>
                             </div>
                         </div>
