@@ -738,36 +738,32 @@ function SystemUsersView() {
 
     return (
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem', alignItems: 'center' }}>
-                <div>
-                    <h3 style={{ fontSize: '1.5rem', marginBottom: '0.25rem', color: '#0F172A' }}>Usuarios del Sistema</h3>
-                    <p className="text-muted">Gestión de accesos y credenciales.</p>
-                </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem', alignItems: 'center' }}>
                 <button
                     className={`btn ${showForm ? 'btn-outline' : 'btn-primary'}`}
                     onClick={() => setShowForm(!showForm)}
-                    style={{ transition: 'all 0.3s' }}
+                    style={{ transition: 'all 0.3s', padding: '0.5rem 1rem', fontSize: '0.9rem' }}
                 >
-                    {showForm ? 'Cancelar Registro' : <><UserPlus size={18} /> Nuevo Usuario</>}
+                    {showForm ? 'Cancelar' : <><UserPlus size={16} /> Nuevo Usuario</>}
                 </button>
             </div>
 
             {showForm && (
-                <div className="card fade-in" style={{ marginBottom: '2rem', borderLeft: '4px solid #2563EB', position: 'relative' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid #F1F5F9' }}>
-                        <div style={{ background: '#EFF6FF', padding: '0.5rem', borderRadius: '50%', color: '#2563EB' }}>
-                            <Shield size={20} />
+                <div className="card fade-in" style={{ marginBottom: '1rem', borderLeft: '4px solid #2563EB', position: 'relative', padding: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', paddingBottom: '0.75rem', borderBottom: '1px solid #F1F5F9' }}>
+                        <div style={{ background: '#EFF6FF', padding: '0.4rem', borderRadius: '50%', color: '#2563EB' }}>
+                            <Shield size={18} />
                         </div>
                         <div>
-                            <h4 style={{ margin: 0, fontSize: '1.1rem', color: '#1E293B' }}>Nueva Credencial</h4>
-                            <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748B' }}>Complete los datos para generar el acceso.</p>
+                            <h4 style={{ margin: 0, fontSize: '1rem', color: '#1E293B' }}>Nueva Credencial</h4>
+                            <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748B' }}>Complete los datos.</p>
                         </div>
                     </div>
 
                     {msg && <div className="badge badge-danger" style={{ marginBottom: '1.5rem', display: 'flex', gap: '0.5rem' }}>{msg}</div>}
 
                     <form onSubmit={handleCreate}>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
                             <div className="input-group">
                                 <label className="label">Usuario</label>
                                 <input
@@ -811,28 +807,28 @@ function SystemUsersView() {
                 </div>
             )}
 
-            <div className="grid-dashboard">
+            <div className="grid-dashboard" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.75rem' }}>
                 {users.map(u => (
-                    <div key={u.id} className="card" style={{ transition: 'all 0.2s', border: '1px solid #F1F5F9' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                    <div key={u.id} className="card" style={{ transition: 'all 0.2s', border: '1px solid #F1F5F9', padding: '0.75rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
                             <div style={{
                                 background: u.role === 'admin' ? '#EFF6FF' : u.role === 'supervisor' ? '#FFF7ED' : '#F0FDF4',
-                                padding: '1rem', borderRadius: '1rem',
+                                padding: '0.5rem', borderRadius: '0.75rem',
                                 color: u.role === 'admin' ? '#2563EB' : u.role === 'supervisor' ? '#EA580C' : '#16A34A'
                             }}>
-                                <Shield size={24} />
+                                <Shield size={20} />
                             </div>
                             <div>
-                                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0F172A' }}>{u.username}</h3>
-                                <p style={{ fontSize: '0.85rem', color: '#94A3B8' }}>{u.email}</p>
+                                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#0F172A', margin: 0 }}>{u.username}</h3>
+                                <p style={{ fontSize: '0.75rem', color: '#94A3B8', margin: 0 }}>{u.email.split('@')[0]}</p>
                             </div>
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #F8FAFC', paddingTop: '1rem' }}>
-                            <div className={`badge badge-${u.role === 'admin' ? 'primary' : u.role === 'supervisor' ? 'warning' : 'success'}`}>
-                                {u.role === 'admin' ? 'Admin' : u.role === 'supervisor' ? 'Supervisor' : 'Agente'}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #F8FAFC', paddingTop: '0.75rem' }}>
+                            <div className={`badge badge-${u.role === 'admin' ? 'primary' : u.role === 'supervisor' ? 'warning' : 'success'}`} style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}>
+                                {u.role === 'admin' ? 'Admin' : u.role === 'supervisor' ? 'Sup.' : 'Agente'}
                             </div>
-                            {u.onShift && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22C55E' }} title="Turno Activo"></div>}
+                            {u.onShift && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#22C55E' }} title="Turno Activo"></div>}
                         </div>
                     </div>
                 ))}
