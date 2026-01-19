@@ -170,7 +170,8 @@ export default function Login() {
                 </form>
 
                 <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-                    <p className="text-muted text-sm">¿Problemas de acceso? Contacte a Sistemas.</p>
+                    <p className="text-muted" style={{ fontSize: '0.75rem', margin: 0 }}>&copy; 2026 Ing. Amaro Vilela Vargas - 944499069</p>
+                    <p className="text-muted" style={{ fontSize: '0.75rem', margin: 0 }}>E-mail: amalviva@gmail.com</p>
                 </div>
             </div>
         </div>
