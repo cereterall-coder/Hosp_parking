@@ -469,8 +469,7 @@ function PersonnelView({ isMobile }) {
                     <p className="text-muted" style={{ marginTop: 0 }}>Directorio de personal médico y administrativo.</p>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', width: isMobile ? '100%' : 'auto' }}>
-
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', width: isMobile ? '100%' : 'auto' }}>
                     {!isMobile && (
                         <div style={{ position: 'relative' }}>
                             <input
@@ -480,9 +479,8 @@ function PersonnelView({ isMobile }) {
                                 style={{ position: 'absolute', opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }}
                                 disabled={uploading}
                             />
-                            <button className="btn btn-outline" disabled={uploading}>
-                                <UploadCloud size={18} />
-                                {uploading ? 'Cargando...' : 'Importar Excel'}
+                            <button className="btn btn-outline" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }} disabled={uploading}>
+                                <UploadCloud size={16} /> Importar
                             </button>
                         </div>
                     )}
@@ -490,9 +488,9 @@ function PersonnelView({ isMobile }) {
                     <button
                         className={`btn ${showForm ? 'btn-outline' : 'btn-primary'}`}
                         onClick={() => setShowForm(!showForm)}
-                        style={{ flex: isMobile ? 1 : 'none' }}
+                        style={{ flex: isMobile ? 1 : 'none', padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
                     >
-                        {showForm ? 'Cancelar' : <><Plus size={18} /> Registrar</>}
+                        {showForm ? 'Cancelar' : <><Plus size={16} /> Nuevo</>}
                     </button>
                 </div>
             </div>
@@ -532,32 +530,32 @@ function PersonnelView({ isMobile }) {
                 </div>
             )}
 
-            <div className="grid-dashboard" style={{ gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(300px, 1fr))' }}>
+            <div className="grid-dashboard" style={{ gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(250px, 1fr))', gap: '0.75rem' }}>
                 {personnel.map(p => (
-                    <div key={p.id || Math.random()} className="card" style={{ position: 'relative' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                    <div key={p.id || Math.random()} className="card" style={{ position: 'relative', padding: '0.75rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
                             <div style={{
-                                width: '48px', height: '48px',
-                                background: '#EFF6FF', borderRadius: '12px',
+                                width: '36px', height: '36px',
+                                background: '#EFF6FF', borderRadius: '8px',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                color: '#2563EB', fontWeight: 'bold', fontSize: '1.2rem'
+                                color: '#2563EB', fontWeight: 'bold', fontSize: '1rem'
                             }}>
                                 {(p.firstName && p.firstName[0]) ? p.firstName[0] : (p.fullName ? p.fullName[0] : '?')}
                             </div>
-                            <div style={{ overflow: 'hidden', paddingRight: '2rem' }}>
-                                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <div style={{ overflow: 'hidden', paddingRight: '1.5rem', flex: 1 }}>
+                                <h3 style={{ fontSize: '0.95rem', fontWeight: 600, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                     {p.firstName ? `${p.firstName} ${p.lastName || ''}` : p.fullName}
                                 </h3>
-                                <div style={{ color: '#64748B', fontSize: '0.85rem' }}>{p.role}</div>
+                                <div style={{ color: '#64748B', fontSize: '0.75rem' }}>{p.role}</div>
                             </div>
                         </div>
-                        <div style={{ background: '#F8FAFC', padding: '1rem', borderRadius: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontFamily: 'monospace', fontWeight: 'bold', fontSize: '1.1rem' }}>{p.licensePlate}</span>
-                            <div className={`badge ${p.vehicleType === 'moto' ? 'badge-warning' : 'badge-primary'}`}>
+                        <div style={{ background: '#F8FAFC', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontFamily: 'monospace', fontWeight: 'bold', fontSize: '0.95rem' }}>{p.licensePlate}</span>
+                            <div className={`badge ${p.vehicleType === 'moto' ? 'badge-warning' : 'badge-primary'}`} style={{ fontSize: '0.7rem', padding: '0.1rem 0.4rem' }}>
                                 {p.vehicleType === 'moto' ? 'Moto' : 'Auto'}
                             </div>
                         </div>
-                        <button className="btn-icon" onClick={() => handleDelete(p.id)} style={{ position: 'absolute', top: '1rem', right: '1rem', color: '#EF4444' }}><Trash2 size={16} /></button>
+                        <button className="btn-icon" onClick={() => handleDelete(p.id)} style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', color: '#EF4444' }}><Trash2 size={14} /></button>
                     </div>
                 ))}
             </div>
