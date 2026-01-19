@@ -144,19 +144,8 @@ export default function AdminDashboard() {
                     )}
                 </nav>
 
-                <div style={{ borderTop: '1px solid #1E293B', paddingTop: '1.5rem', marginTop: 'auto', paddingBottom: isMobile ? '2rem' : 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                        <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <span style={{ fontWeight: 'bold' }}>{userRole?.[0]?.toUpperCase()}</span>
-                        </div>
-                        <div>
-                            <p style={{ fontSize: '0.9rem', fontWeight: '500', textTransform: 'capitalize' }}>{userRole}</p>
-                            <p style={{ fontSize: '0.75rem', color: '#94A3B8' }}>Sesión Activa</p>
-                        </div>
-                    </div>
-                    <button onClick={() => signOut(auth)} className="btn btn-outline" style={{ width: '100%', borderColor: '#334155', background: 'transparent', color: '#CBD5E1' }}>
-                        <LogOut size={16} /> Cerrar Sesión
-                    </button>
+                <div style={{ paddingBottom: isMobile ? '2rem' : 0 }}>
+                    {/* User footer removed - moved to header */}
                 </div>
             </aside>
 
