@@ -79,28 +79,29 @@ export default function Login() {
         }}>
             <div className="card fade-in" style={{
                 width: '100%',
-                maxWidth: '420px',
-                padding: '2.5rem',
+                maxWidth: '360px',
+                padding: '1.5rem',
                 background: 'rgba(255, 255, 255, 0.95)',
                 backdropFilter: 'blur(10px)',
                 border: '1px solid rgba(255,255,255,0.1)',
                 boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
             }}>
-                <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+                <div style={{ textAlign: 'center', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', justifyContent: 'center' }}>
                     <div style={{
                         background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
-                        width: '64px', height: '64px',
-                        borderRadius: '16px',
+                        width: '48px', height: '48px',
+                        borderRadius: '12px',
                         display: 'inline-flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        marginBottom: '1rem',
-                        boxShadow: '0 10px 15px -3px rgba(37, 99, 235, 0.3)'
+                        boxShadow: '0 4px 6px -1px rgba(37, 99, 235, 0.3)'
                     }}>
-                        <Car size={32} color="white" />
+                        <Car size={24} color="white" />
                     </div>
-                    <h1 style={{ fontSize: '1.75rem', marginBottom: '0.5rem', color: '#0F172A' }}>Hospital Parking</h1>
-                    <p style={{ color: '#64748B' }}>Sistema de Control de Acceso Seguro</p>
+                    <div style={{ textAlign: 'left' }}>
+                        <h1 style={{ fontSize: '1.25rem', color: '#0F172A', fontWeight: 700, lineHeight: 1.2, margin: 0 }}>Hospital Parking</h1>
+                        <p style={{ color: '#64748B', fontSize: '0.85rem', margin: 0 }}>Acceso Seguro</p>
+                    </div>
                 </div>
 
                 {error && (
