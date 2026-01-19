@@ -570,6 +570,21 @@ function HistoryView({ isMobile }) {
         return unsubscribe;
     }, []);
 
+    const formatDuration = (start, end) => {
+        if (!start || !end) return '-';
+        const diff = end - start;
+        if (diff < 0) return '-';
+
+        const totalMinutes = Math.floor(diff / 60000);
+        const days = Math.floor(totalMinutes / 1440);
+        const hours = Math.floor((totalMinutes % 1440) / 60);
+        const minutes = totalMinutes % 60;
+
+        if (days > 0) return `${days}d ${hours}h ${minutes}min`;
+        if (hours > 0) return `${hours}h ${minutes}min`;
+        return `${minutes}min`;
+    };
+
     const filteredHistory = history.filter(h =>
         (h.plate && h.plate.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (h.driverName && h.driverName.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -598,7 +613,7 @@ function HistoryView({ isMobile }) {
                     {filteredHistory.map(h => {
                         const start = h.entryTime && h.entryTime.toDate ? h.entryTime.toDate() : null;
                         const end = h.exitTime && h.exitTime.toDate ? h.exitTime.toDate() : null;
-                        const duration = end && start ? Math.round((end - start) / 60000) + ' min' : '-';
+                        const duration = formatDuration(start, end);
                         return (
                             <div key={h.id} className="card" style={{ padding: '0.75rem' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
@@ -634,7 +649,7 @@ function HistoryView({ isMobile }) {
                                 {filteredHistory.map(h => {
                                     const start = h.entryTime && h.entryTime.toDate ? h.entryTime.toDate() : null;
                                     const end = h.exitTime && h.exitTime.toDate ? h.exitTime.toDate() : null;
-                                    const duration = end && start ? Math.round((end - start) / 60000) + ' min' : '-';
+                                    const duration = formatDuration(start, end);
                                     return (
                                         <tr key={h.id}>
                                             <td><span style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{h.plate}</span></td>
