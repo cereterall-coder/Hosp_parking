@@ -179,11 +179,32 @@ export default function AdminDashboard() {
                                 {activeTab === 'locations' && 'Sedes y Puertas'}
                             </h2>
                         </div>
-                        {/* Only show "Sistema Operativo" badge on Desktop to save space */}
-                        {!isMobile && (
-                            <div className="badge badge-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}>
-                                <div style={{ width: '6px', height: '6px', background: '#22C55E', borderRadius: '50%' }}></div>
-                                Sistema Operativo
+                        {!isMobile && currentUser && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <div style={{ textAlign: 'right', lineHeight: '1.2' }}>
+                                    <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#1E293B' }}>{currentUser.fullName || currentUser.username}</div>
+                                    <div style={{ fontSize: '0.75rem', color: '#64748B', textTransform: 'capitalize' }}>{currentUser.role || userRole}</div>
+                                </div>
+                                <div style={{
+                                    width: '36px', height: '36px', borderRadius: '50%',
+                                    background: '#2563EB', color: 'white',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    fontWeight: 'bold', fontSize: '1rem'
+                                }}>
+                                    {(currentUser.fullName || currentUser.username || "U")[0].toUpperCase()}
+                                </div>
+                                <button
+                                    onClick={() => signOut(auth)}
+                                    className="btn-icon"
+                                    style={{
+                                        color: '#EF4444', background: '#FEF2F2', border: '1px solid #FECACA',
+                                        width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        cursor: 'pointer', transition: 'all 0.2s', marginLeft: '0.25rem'
+                                    }}
+                                    title="Cerrar Sesión"
+                                >
+                                    <LogOut size={18} />
+                                </button>
                             </div>
                         )}
                     </header>
