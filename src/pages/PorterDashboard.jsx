@@ -152,15 +152,42 @@ function UnifiedOperationFlow({ currentUser }) {
     const handleOCR = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
+
         setOcrLoading(true);
-        setPlate('ESCANEA...');
+        setPlate('PROCESANDO...');
+
         try {
-            const { data: { text } } = await Tesseract.recognize(file, 'eng');
-            const cleanText = text.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+            // Using 'eng' is usually best for alphanumeric plates
+            const { data: { text } } = await Tesseract.recognize(
+                file,
+                'eng'
+                // { logger: m => console.log(m) } // Uncomment for debug
+            );
+
+            // Clean text: remove non-alphanumeric, convert to uppercase
+            const cleanText = text.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+
+            console.log("OCR Read:", cleanText);
+
+            // Look for 6-7 char sequence
             const match = cleanText.match(/[A-Z0-9]{6,7}/);
-            if (match) checkPlateAction(match[0]);
-            else checkPlateAction(cleanText.substring(0, 7));
-        } catch (err) { setPlate(''); }
+
+            if (match) {
+                checkPlateAction(match[0]);
+            } else {
+                // Determine if we found *something* but it didn't look like a plate
+                if (cleanText.length > 2) {
+                    alert(`No se detectó formato de placa válido (6 car.). Leído: ${cleanText.substring(0, 8)}...`);
+                } else {
+                    alert("No se pudo leer la placa. Intente mejorar la iluminación o el enfoque.");
+                }
+                setPlate('');
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Error del sistema OCR. Verifique su conexión o intente manual.");
+            setPlate('');
+        }
         setOcrLoading(false);
     };
 
