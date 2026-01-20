@@ -87,9 +87,33 @@ export default function AdminDashboard() {
                             )}
                         </h1>
                     </div>
-                    <button onClick={toggleMenu} style={{ background: 'none', border: 'none', color: 'white' }}>
-                        {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        {currentUser && (
+                            <>
+                                <div style={{
+                                    width: '32px', height: '32px', borderRadius: '50%',
+                                    background: '#3B82F6', color: 'white',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    fontWeight: 'bold', fontSize: '0.8rem',
+                                    border: '2px solid #1E293B'
+                                }}>
+                                    {(currentUser.fullName || currentUser.username || "U")[0].toUpperCase()}
+                                </div>
+                                <button
+                                    onClick={() => signOut(auth)}
+                                    className="btn-icon"
+                                    style={{ background: 'none', border: 'none', color: '#FCA5A5', padding: '0.25rem', display: 'flex', alignItems: 'center' }}
+                                    title="Cerrar Sesión"
+                                >
+                                    <LogOut size={20} />
+                                </button>
+                                <div style={{ width: '1px', height: '24px', background: '#334155' }}></div>
+                            </>
+                        )}
+                        <button onClick={toggleMenu} style={{ background: 'none', border: 'none', color: 'white', display: 'flex', alignItems: 'center' }}>
+                            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                        </button>
+                    </div>
                 </div>
             )}
 
@@ -145,7 +169,46 @@ export default function AdminDashboard() {
                 </nav>
 
                 <div style={{ paddingBottom: isMobile ? '2rem' : 0 }}>
-                    {/* User footer removed - moved to header */}
+                    {isMobile && currentUser && (
+                        <div style={{
+                            borderTop: '1px solid #1E293B',
+                            paddingTop: '1rem',
+                            marginTop: '1rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.75rem'
+                        }}>
+                            <div style={{
+                                width: '40px', height: '40px', borderRadius: '50%',
+                                background: '#2563EB', color: 'white',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontWeight: 'bold', fontSize: '1.1rem',
+                                flexShrink: 0
+                            }}>
+                                {(currentUser.fullName || currentUser.username || "U")[0].toUpperCase()}
+                            </div>
+                            <div style={{ flex: 1, overflow: 'hidden' }}>
+                                <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {currentUser.fullName || currentUser.username}
+                                </div>
+                                <div style={{ fontSize: '0.75rem', color: '#94A3B8', textTransform: 'capitalize' }}>
+                                    {currentUser.role || userRole}
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => signOut(auth)}
+                                className="btn-icon"
+                                style={{
+                                    color: '#EF4444', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #EF4444',
+                                    width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    cursor: 'pointer', transition: 'all 0.2s', flexShrink: 0
+                                }}
+                                title="Cerrar Sesión"
+                            >
+                                <LogOut size={20} />
+                            </button>
+                        </div>
+                    )}
                 </div>
             </aside>
 
