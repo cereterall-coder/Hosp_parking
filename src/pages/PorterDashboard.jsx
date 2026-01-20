@@ -154,38 +154,55 @@ function UnifiedOperationFlow({ currentUser }) {
         if (!file) return;
 
         setOcrLoading(true);
-        setPlate('PROCESANDO...');
+        setPlate('ANALIZANDO...');
 
         try {
-            // Using 'eng' is usually best for alphanumeric plates
-            const { data: { text } } = await Tesseract.recognize(
-                file,
-                'eng'
-                // { logger: m => console.log(m) } // Uncomment for debug
-            );
+            const { data: { text } } = await Tesseract.recognize(file, 'eng');
+            console.log("OCR Raw:", text);
 
-            // Clean text: remove non-alphanumeric, convert to uppercase
-            const cleanText = text.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+            // Strategy: Prioritize specific Peruvian plate patterns
+            // pattern 1: 3 Letters + 3 Numbers (Example: ABC-123, ABC 123, ABC123)
+            const matchStandard = text.match(/([a-zA-Z]{3})[\s-]*([0-9]{3})(?![0-9])/); // (?![0-9]) ensure not 4 numbers
 
-            console.log("OCR Read:", cleanText);
+            // pattern 2: 2 Letters + 4 Numbers (Example: AB-1234)
+            const matchOld = text.match(/([a-zA-Z]{2})[\s-]*([0-9]{4})/);
 
-            // Look for 6-7 char sequence
-            const match = cleanText.match(/[A-Z0-9]{6,7}/);
+            let detected = null;
 
-            if (match) {
-                checkPlateAction(match[0]);
+            if (matchStandard) {
+                detected = (matchStandard[1] + matchStandard[2]).toUpperCase();
+            } else if (matchOld) {
+                detected = (matchOld[1] + matchOld[2]).toUpperCase();
             } else {
-                // Determine if we found *something* but it didn't look like a plate
-                if (cleanText.length > 2) {
-                    alert(`No se detectó formato de placa válido (6 car.). Leído: ${cleanText.substring(0, 8)}...`);
-                } else {
-                    alert("No se pudo leer la placa. Intente mejorar la iluminación o el enfoque.");
+                // Fallback: If no clear pattern, but the TOTAL clean text is exactly 6 or 7 chars, use it.
+                // This prevents "PERU ABC 123" from becoming "PERUABC123" (10 chars), but catches a clean crop "ABC123"
+                const cleanAll = text.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+                if (cleanAll.length >= 6 && cleanAll.length <= 7) {
+                    detected = cleanAll;
                 }
-                setPlate('');
             }
+
+            if (detected) {
+                checkPlateAction(detected);
+            } else {
+                // Try one last heuristic: Look for lines with exactly 6-7 alphanum chars
+                const lines = text.split('\n');
+                const potentialLine = lines.find(l => {
+                    const c = l.replace(/[^A-Za-z0-9]/g, '');
+                    return c.length >= 6 && c.length <= 7;
+                });
+
+                if (potentialLine) {
+                    checkPlateAction(potentialLine.replace(/[^A-Za-z0-9]/g, '').toUpperCase());
+                } else {
+                    alert("No se detectó patrón de placa (Ej: ABC-123). Intente acercar la cámara.");
+                    setPlate('');
+                }
+            }
+
         } catch (err) {
             console.error(err);
-            alert("Error del sistema OCR. Verifique su conexión o intente manual.");
+            alert("Error al leer imagen.");
             setPlate('');
         }
         setOcrLoading(false);
