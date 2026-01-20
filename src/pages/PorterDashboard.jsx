@@ -306,30 +306,63 @@ function EntryForm({ plateProp, onSuccess, currentUser }) {
         setLoading(false);
     };
 
-    const searchInDirectory = async () => {
-        if (!directoryQuery) return;
-        setLoading(true);
-        setDirectoryResult(null);
-        try {
-            let q = query(collection(db, "staff_directory"), where("dni", "==", directoryQuery.trim()));
-            let snap = await getDocs(q);
+    const [directoryResultsList, setDirectoryResultsList] = useState([]); // List of multiple matches
 
-            if (snap.empty) {
-                q = query(collection(db, "staff_directory"), where("fullName", "==", directoryQuery.trim()));
-                snap = await getDocs(q);
+    const searchInDirectory = async () => {
+        if (!directoryQuery || directoryQuery.length < 3) return; // Min 3 chars
+        setLoading(true);
+        setDirectoryResultsList([]);
+        setMessage(null);
+        setDirectoryResult(null);
+
+        try {
+            let results = [];
+            const term = directoryQuery.trim().toLowerCase();
+
+            // 1. Exact DNI Search
+            if (/^\d+$/.test(term)) {
+                const qDni = query(collection(db, "staff_directory"), where("dni", "==", term));
+                const snapDni = await getDocs(qDni);
+                snapDni.forEach(doc => results.push({ id: doc.id, ...doc.data() }));
             }
 
-            if (!snap.empty) {
-                setDirectoryResult({ id: snap.docs[0].id, ...snap.docs[0].data() });
-                setMessage(null);
+            // 2. Name/Lastname Search (Manual Filter because Firestore doesn't support 'contains')
+            if (results.length === 0) {
+                // We fetch all (or a reasonable limit could be better, but for now fetch all is safer for small directories)
+                // Optimally we should maybe structure data to allow improved searching, but client-side filter is fine for < 1000 records
+                const qAll = query(collection(db, "staff_directory"));
+                const snapAll = await getDocs(qAll);
+
+                results = snapAll.docs
+                    .map(d => ({ id: d.id, ...d.data() }))
+                    .filter(person => {
+                        const fullName = (person.fullName || "").toLowerCase();
+                        // Check if term is part of full name
+                        return fullName.includes(term);
+                    });
+            }
+
+            if (results.length > 0) {
+                setDirectoryResultsList(results);
+                if (results.length === 1) {
+                    // Auto-select if only one
+                    selectDirectoryPerson(results[0]);
+                }
             } else {
-                setMessage({ type: 'error', text: 'No encontrado en el Directorio.' });
+                setMessage({ type: 'error', text: 'No se encontraron coincidencias.' });
             }
 
         } catch (e) {
+            console.error(e);
             setMessage({ type: 'error', text: 'Error en búsqueda.' });
         }
         setLoading(false);
+    }
+
+    const selectDirectoryPerson = (person) => {
+        setDirectoryResult(person);
+        setDirectoryResultsList([]); // Clear list
+        setDirectoryQuery(''); // Clear query
     }
 
     const registerEntry = async () => {
@@ -492,13 +525,44 @@ function EntryForm({ plateProp, onSuccess, currentUser }) {
                         </div>
                     )}
 
+
                     {showDirectorySearch && !foundPerson && !directoryResult && (
                         <div style={{ background: '#FFF7ED', padding: '1rem', borderRadius: '0.75rem', border: '1px solid #FFEDD5', marginBottom: '1.5rem' }}>
-                            <p style={{ fontSize: '0.9rem', color: '#9A3412', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Search size={14} /> Buscar en Directorio:</p>
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                <input className="input" placeholder="DNI o Nombre Exacto" value={directoryQuery} onChange={e => setDirectoryQuery(e.target.value)} />
+                            <p style={{ fontSize: '0.9rem', color: '#9A3412', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Search size={14} /> Buscar Personal (DNI o Apellido):</p>
+                            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: directoryResultsList.length > 0 ? '1rem' : 0 }}>
+                                <input
+                                    className="input"
+                                    placeholder="Ingrese DNI o Apellidos..."
+                                    value={directoryQuery}
+                                    onChange={e => setDirectoryQuery(e.target.value)}
+                                    onKeyDown={e => e.key === 'Enter' && searchInDirectory()}
+                                />
                                 <button className="btn btn-primary" onClick={searchInDirectory} disabled={loading}>Buscar</button>
                             </div>
+
+                            {/* Results List */}
+                            {directoryResultsList.length > 0 && (
+                                <div style={{ maxHeight: '200px', overflowY: 'auto', background: 'white', borderRadius: '0.5rem', border: '1px solid #E2E8F0' }}>
+                                    {directoryResultsList.map(item => (
+                                        <div
+                                            key={item.id}
+                                            onClick={() => selectDirectoryPerson(item)}
+                                            style={{
+                                                padding: '0.75rem', borderBottom: '1px solid #F1F5F9', cursor: 'pointer', transition: 'background 0.2s',
+                                                display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                                            }}
+                                            onMouseEnter={e => e.currentTarget.style.background = '#F8FAFC'}
+                                            onMouseLeave={e => e.currentTarget.style.background = 'white'}
+                                        >
+                                            <div>
+                                                <div style={{ fontWeight: 600, color: '#1E293B', fontSize: '0.9rem' }}>{item.fullName}</div>
+                                                <div style={{ fontSize: '0.8rem', color: '#64748B' }}>{item.dni} - {item.role}</div>
+                                            </div>
+                                            <div style={{ color: '#2563EB', fontWeight: 'bold' }}>Seleccionar</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
 
