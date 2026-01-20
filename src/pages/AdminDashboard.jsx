@@ -87,33 +87,9 @@ export default function AdminDashboard() {
                             )}
                         </h1>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        {currentUser && (
-                            <>
-                                <div style={{
-                                    width: '32px', height: '32px', borderRadius: '50%',
-                                    background: '#3B82F6', color: 'white',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    fontWeight: 'bold', fontSize: '0.8rem',
-                                    border: '2px solid #1E293B'
-                                }}>
-                                    {(currentUser.fullName || currentUser.username || "U")[0].toUpperCase()}
-                                </div>
-                                <button
-                                    onClick={() => signOut(auth)}
-                                    className="btn-icon"
-                                    style={{ background: 'none', border: 'none', color: '#FCA5A5', padding: '0.25rem', display: 'flex', alignItems: 'center' }}
-                                    title="Cerrar Sesión"
-                                >
-                                    <LogOut size={20} />
-                                </button>
-                                <div style={{ width: '1px', height: '24px', background: '#334155' }}></div>
-                            </>
-                        )}
-                        <button onClick={toggleMenu} style={{ background: 'none', border: 'none', color: 'white', display: 'flex', alignItems: 'center' }}>
-                            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-                        </button>
-                    </div>
+                    <button onClick={toggleMenu} style={{ background: 'none', border: 'none', color: 'white' }}>
+                        {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                    </button>
                 </div>
             )}
 
