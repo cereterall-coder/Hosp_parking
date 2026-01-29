@@ -36,11 +36,12 @@
 
 body {
   font-family: var(--font-sans);
-  background-color: var(--slate-50);
+  background-color: #e2e8f0;
+  /* Darkened from slate-50 to slate-200/custom */
   background-image:
-    radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 0) 0, transparent 50%),
-    radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 0) 0, transparent 50%),
-    radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 0) 0, transparent 50%);
+    radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 0.03) 0, transparent 50%),
+    radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 0.03) 0, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 0.03) 0, transparent 50%);
   color: var(--slate-800);
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
@@ -50,7 +51,8 @@ body {
 .layout-container {
   display: flex;
   min-height: 100vh;
-  background: var(--slate-50);
+  background: #f1f5f9;
+  /* Slate-100 */
 }
 
 .main-content {
@@ -59,6 +61,7 @@ body {
   overflow-y: auto;
   max-width: 1600px;
   margin: 0 auto;
+  background-color: transparent;
 }
 
 /* Cards & Surfaces */
@@ -275,4 +278,44 @@ tr:hover td {
 
 .fade-in {
   animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* Visual Map Card Styles */
+.visual-card {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: default;
+  border: 1px solid var(--slate-200);
+  background: white;
+}
+
+.visual-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--primary-500);
+}
+
+.visual-card:hover .visual-info-overlay {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.visual-info-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(15, 23, 42, 0.95);
+  color: white;
+  padding: 1.25rem;
+  transform: translateY(100%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0;
+  backdrop-filter: blur(4px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
 }

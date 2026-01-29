@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { db, auth } from '../firebase';
 import { collection, onSnapshot, query, addDoc, deleteDoc, doc, orderBy, limit, serverTimestamp, where, updateDoc, writeBatch } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
-import { LogOut, Car, Bike, Users, LayoutDashboard, History, Plus, Trash2, Search, Clock, Shield, UserPlus, UserCheck, ToggleLeft, ToggleRight, Scale, UploadCloud, FileSpreadsheet, Menu, X, ShieldCheck, Lock, Building2, MapPin, Edit, CheckCircle } from 'lucide-react';
+import { LogOut, Car, Bike, Users, LayoutDashboard, History, Plus, Trash2, Search, Clock, Shield, UserPlus, UserCheck, ToggleLeft, ToggleRight, Scale, UploadCloud, FileSpreadsheet, Menu, X, ShieldCheck, Lock, Building2, MapPin, Edit, CheckCircle, Grid, AlertTriangle } from 'lucide-react';
 import { createSystemUser } from '../utils/adminAuth';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -42,6 +43,24 @@ export default function AdminDashboard() {
     const { userRole } = useAuth();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+    // Modal State
+    const [confirmModal, setConfirmModal] = useState({
+        open: false,
+        title: '',
+        message: '',
+        type: 'neutral', // neutral, danger, warning
+        onConfirm: null
+    });
+
+    const requestConfirm = (title, message, onConfirm, type = 'neutral') => {
+        setConfirmModal({ open: true, title, message, onConfirm, type });
+    };
+
+    const handleConfirm = () => {
+        if (confirmModal.onConfirm) confirmModal.onConfirm();
+        setConfirmModal({ ...confirmModal, open: false });
+    };
+
     // console.log("AdminDashboard Loaded Clean");
 
     const [currentUser, setCurrentUser] = useState(null);
@@ -130,6 +149,7 @@ export default function AdminDashboard() {
 
                 <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     <NavBtn icon={<LayoutDashboard size={20} />} label="Dashboard General" active={activeTab === 'dashboard'} onClick={() => { setActiveTab('dashboard'); closeMenu(); }} />
+                    <NavBtn icon={<Grid size={20} />} label="Mapa Visual" active={activeTab === 'visual_map'} onClick={() => { setActiveTab('visual_map'); closeMenu(); }} />
                     <NavBtn icon={<Users size={20} />} label="Gestión Personal" active={activeTab === 'personal'} onClick={() => { setActiveTab('personal'); closeMenu(); }} />
                     <NavBtn icon={<History size={20} />} label="Historial Accesos" active={activeTab === 'history'} onClick={() => { setActiveTab('history'); closeMenu(); }} />
 
@@ -205,6 +225,7 @@ export default function AdminDashboard() {
                                 {activeTab === 'system_users' && 'Usuarios del Sistema'}
                                 {activeTab === 'shifts' && 'Gestión de Turnos'}
                                 {activeTab === 'locations' && 'Sedes y Puertas'}
+                                {activeTab === 'visual_map' && 'Mapa en Tiempo Real'}
                             </h2>
                         </div>
                         {!isMobile && currentUser && (
@@ -238,15 +259,90 @@ export default function AdminDashboard() {
                     </header>
 
                     <ErrorBoundary key={activeTab}>
-                        {activeTab === 'dashboard' && <DashboardView isMobile={isMobile} />}
-                        {activeTab === 'personal' && <PersonnelView isMobile={isMobile} />}
+                        {activeTab === 'dashboard' && <DashboardView isMobile={isMobile} onAction={requestConfirm} />}
+                        {activeTab === 'personal' && <PersonnelView isMobile={isMobile} onAction={requestConfirm} />}
                         {activeTab === 'history' && <HistoryView isMobile={isMobile} />}
                         {activeTab === 'system_users' && userRole === 'admin' && <SystemUsersView isMobile={isMobile} />}
                         {activeTab === 'shifts' && <ShiftsView isMobile={isMobile} />}
                         {activeTab === 'locations' && <LocationsView isMobile={isMobile} />}
+                        {activeTab === 'visual_map' && <VisualMapView isMobile={isMobile} onAction={requestConfirm} />}
                     </ErrorBoundary>
                 </div>
             </main>
+
+            {/* Global Confirmation Modal */}
+            {confirmModal.open && createPortal(
+                <div className="modal-overlay" style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100vw',
+                    height: '100vh',
+                    background: 'rgba(15, 23, 42, 0.75)',
+                    backdropFilter: 'blur(8px)',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    zIndex: 99999999, // Extreme z-index
+                }}>
+                    <div className="modal-content" style={{
+                        maxWidth: '400px',
+                        textAlign: 'center',
+                        padding: '2rem',
+                        background: confirmModal.type === 'danger' ? '#FFF1F2' : '#F8FAFC',
+                        border: confirmModal.type === 'danger' ? '1px solid #FECACA' : '1px solid #E2E8F0',
+                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+                    }}>
+                        <div style={{
+                            margin: '0 auto 1.5rem',
+                            width: '60px', height: '60px',
+                            borderRadius: '50%',
+                            background: confirmModal.type === 'danger' ? '#FEF2F2' : '#EFF6FF',
+                            color: confirmModal.type === 'danger' ? '#EF4444' : '#2563EB',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                        }}>
+                            {confirmModal.type === 'danger' ? <AlertTriangle size={32} /> : <ShieldCheck size={32} />}
+                        </div>
+                        <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1E293B', marginBottom: '0.75rem' }}>
+                            {confirmModal.title}
+                        </h3>
+                        <p style={{ color: '#64748B', marginBottom: '2rem', lineHeight: '1.5' }}>
+                            {confirmModal.message}
+                        </p>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                            <button
+                                className="btn btn-outline"
+                                onClick={() => setConfirmModal({ ...confirmModal, open: false })}
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                className={`btn ${confirmModal.type === 'danger' ? 'btn-danger' : 'btn-primary'}`}
+                                onClick={handleConfirm}
+                            >
+                                Confirmar
+                            </button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
+
+            {/* Author Watermark */}
+            <div style={{
+                position: 'fixed',
+                bottom: '0.5rem',
+                right: '1rem',
+                fontSize: '0.65rem',
+                color: '#64748B',
+                opacity: 0.5, // Increased visibility
+                pointerEvents: 'none',
+                zIndex: 40,
+                fontFamily: 'monospace',
+                fontWeight: 600
+            }}>
+                Autor: Amalviva - Tfno 944499069
+            </div>
         </div>
     );
 }
@@ -273,7 +369,7 @@ function NavBtn({ icon, label, active, onClick }) {
 }
 
 // Pass isMobile prop down to Views
-function DashboardView({ isMobile }) {
+function DashboardView({ isMobile, onAction }) {
     // ... existing logic ...
     const [vehicles, setVehicles] = useState([]);
 
@@ -369,6 +465,7 @@ function DashboardView({ isMobile }) {
                                 <th style={{ padding: '0.5rem' }}>Tipo</th>
                                 {!isMobile && <th style={{ padding: '0.5rem' }}>Tiempo</th>}
                                 {!isMobile && <th style={{ padding: '0.5rem' }}>Estado</th>}
+                                <th style={{ padding: '0.5rem' }}>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -386,6 +483,31 @@ function DashboardView({ isMobile }) {
                                         </div>
                                     </td>
                                     <td style={{ padding: '0.5rem' }}><span className="badge badge-success" style={{ fontSize: '0.7rem', padding: '0.1rem 0.3rem' }}>Activo</span></td>
+                                    <td style={{ padding: '0.5rem' }}>
+                                        <button
+                                            className="btn-icon"
+                                            title="Forzar Salida"
+                                            onClick={() => onAction(
+                                                'Forzar Salida',
+                                                `¿Estás seguro de forzar la salida del vehículo ${v.plate}? Esta acción quedará registrada como una incidencia administrativa.`,
+                                                async () => {
+                                                    try {
+                                                        await addDoc(collection(db, "history"), {
+                                                            ...v,
+                                                            exitTime: serverTimestamp(),
+                                                            status: 'completed_forced_admin',
+                                                            notes: 'Salida Forzada por Admin'
+                                                        });
+                                                        await deleteDoc(doc(db, "active_parking", v.id));
+                                                    } catch (e) { alert("Error"); }
+                                                },
+                                                'danger'
+                                            )}
+                                            style={{ color: '#EF4444', background: '#FEF2F2', padding: '0.4rem', borderRadius: '0.3rem' }}
+                                        >
+                                            <LogOut size={16} />
+                                        </button>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
@@ -396,6 +518,132 @@ function DashboardView({ isMobile }) {
     );
 }
 
+function VisualMapView({ isMobile, onAction }) {
+    const [vehicles, setVehicles] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const q = query(collection(db, "active_parking"));
+        const unsubscribe = onSnapshot(q, (snap) => {
+            const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            setVehicles(data);
+            setLoading(false);
+        });
+        return unsubscribe;
+    }, []);
+
+    // Helper to calculate duration
+    const getDuration = (entryTime) => {
+        if (!entryTime || !entryTime.toDate) return '0 min';
+        const start = entryTime.toDate();
+        const diff = new Date() - start;
+        const totalMinutes = Math.floor(diff / 60000);
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+
+        if (hours > 0) return `${hours}h ${minutes}m`;
+        return `${minutes} min`;
+    };
+
+    if (loading) return <div className="text-muted" style={{ padding: '2rem', textAlign: 'center' }}>Cargando mapa...</div>;
+
+    return (
+        <div style={{ padding: '1rem 0' }}>
+            <div className="grid-dashboard" style={{
+                gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(200px, 1fr))',
+                gap: '1.5rem'
+            }}>
+                {vehicles.map(v => (
+                    <div key={v.id} className="card visual-card" style={{
+                        padding: '0',
+                        height: '180px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderTop: `4px solid ${v.vehicleType === 'moto' ? '#9333EA' : '#2563EB'}`,
+                        position: 'relative'
+                    }}>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onAction(
+                                    'Forzar Salida',
+                                    `¿Deseas registrar la salida forzada (Admin) del vehículo ${v.plate}?`,
+                                    async () => {
+                                        try {
+                                            await addDoc(collection(db, "history"), {
+                                                ...v,
+                                                exitTime: serverTimestamp(),
+                                                status: 'completed_forced_admin',
+                                                notes: 'Salida Forzada por Admin'
+                                            });
+                                            await deleteDoc(doc(db, "active_parking", v.id));
+                                        } catch (e) { alert("Error"); }
+                                    },
+                                    'danger'
+                                );
+                            }}
+                            style={{
+                                position: 'absolute', top: '0.5rem', right: '0.5rem',
+                                background: '#FEF2F2', border: '1px solid #FECACA',
+                                color: '#EF4444', borderRadius: '50%',
+                                width: '32px', height: '32px',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer', zIndex: 10
+                            }}
+                            title="Forzar Salida"
+                        >
+                            <LogOut size={16} />
+                        </button>
+
+                        <div style={{
+                            background: v.vehicleType === 'moto' ? '#F3E8FF' : '#EFF6FF',
+                            padding: '1.5rem',
+                            borderRadius: '50%',
+                            marginBottom: '1rem',
+                            color: v.vehicleType === 'moto' ? '#9333EA' : '#2563EB'
+                        }}>
+                            {v.vehicleType === 'moto' ? <Bike size={32} /> : <Car size={32} />}
+                        </div>
+
+                        <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.25rem', fontFamily: 'monospace' }}>
+                            {v.plate}
+                        </h3>
+
+                        <div className="badge badge-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <Clock size={12} />
+                            {getDuration(v.entryTime)}
+                        </div>
+
+                        {/* Hover Overlay */}
+                        <div className="visual-info-overlay">
+                            <div style={{ width: '100%' }}>
+                                <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94A3B8', marginBottom: '0.25rem' }}>Conductor</div>
+                                <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '0.75rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {v.driverName || 'No registrado'}
+                                </div>
+
+                                <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94A3B8', marginBottom: '0.25rem' }}>Tipo</div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontWeight: 600 }}>{v.type === 'personal' ? 'Personal' : 'Visitante'}</span>
+                                    {v.hospital && <span style={{ fontSize: '0.7rem', background: 'rgba(255,255,255,0.2)', padding: '0.1rem 0.3rem', borderRadius: '4px' }}>{v.hospital}</span>}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {vehicles.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '4rem', color: '#94A3B8', background: 'white', borderRadius: '1rem', border: '2px dashed #E2E8F0' }}>
+                    <Car size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />
+                    <p>El estacionamiento está vacío.</p>
+                </div>
+            )}
+        </div>
+    );
+}
 function KPICard({ title, value, icon, color, trend }) {
     const bgColors = {
         blue: '#EFF6FF',
@@ -433,7 +681,7 @@ function KPICard({ title, value, icon, color, trend }) {
     );
 }
 
-function PersonnelView({ isMobile }) {
+function PersonnelView({ isMobile, onAction }) {
     const [personnel, setPersonnel] = useState([]);
     const [showForm, setShowForm] = useState(false);
     const [newItem, setNewItem] = useState({ fullName: '', dni: '', role: '', licensePlate: '', vehicleType: 'auto' });
@@ -475,13 +723,18 @@ function PersonnelView({ isMobile }) {
     };
 
     const handleDelete = async (id) => {
-        if (confirm('¿Seguro de eliminar a este personal?')) {
-            try {
-                await deleteDoc(doc(db, "personnel", id));
-            } catch (error) {
-                console.error("Error creating personal:", error);
-            }
-        }
+        onAction(
+            'Eliminar Personal',
+            '¿Está seguro de eliminar este registro? Esta acción no se puede deshacer.',
+            async () => {
+                try {
+                    await deleteDoc(doc(db, "personnel", id));
+                } catch (error) {
+                    console.error("Error creating personal:", error);
+                }
+            },
+            'danger'
+        );
     }
 
     const handleFileUpload = async (e) => {
