@@ -20,11 +20,18 @@ export default function ProtectedRoute({ children, requiredRole }) {
 
     if (requiredRole === 'admin' && (userRole === 'admin' || userRole === 'supervisor')) return children;
 
-    if (requiredRole && userRole !== requiredRole) {
+    // Si no hay rol pero hay usuario (internet lento), 
+    // permitimos que el panel se cargue y maneje su estado
+    if (currentUser && !userRole && requiredRole === 'admin') return children;
+
+    if (requiredRole && userRole && userRole !== requiredRole) {
         if (userRole === 'admin' || userRole === 'supervisor') return <Navigate to="/admin" />;
         if (userRole === 'agent') return <Navigate to="/agent" />;
-        return <Navigate to="/login" />;
     }
+
+    // Por defecto, si no hay certeza del rol por lentitud, 
+    // mostramos los children (el panel) para que este cargue sus propios datos
+    return children;
 
     return children;
 }

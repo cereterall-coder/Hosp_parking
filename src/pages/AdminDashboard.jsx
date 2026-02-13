@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { db, auth } from '../firebase';
-import { collection, onSnapshot, query, addDoc, deleteDoc, doc, orderBy, limit, serverTimestamp, where, updateDoc, writeBatch } from 'firebase/firestore';
-import { signOut } from 'firebase/auth';
-import { LogOut, Car, Bike, Users, LayoutDashboard, History, Plus, Trash2, Search, Clock, Shield, UserPlus, UserCheck, ToggleLeft, ToggleRight, Scale, UploadCloud, FileSpreadsheet, Menu, X, ShieldCheck, Lock, Building2, MapPin, Edit, CheckCircle, Grid, AlertTriangle } from 'lucide-react';
+import { supabase } from '../supabase';
+import {
+    LayoutDashboard, Users, History, Settings, LogOut,
+    Car, Bike, Trash2, Edit, Save, X, Plus, Clock,
+    Search, Filter, ChevronRight, Menu, Map as MapIcon,
+    Shield, Briefcase, UserPlus, Phone, ShieldCheck, UserCheck,
+    Key, MoreVertical, Layout, CreditCard, Camera, Info,
+    AlertCircle, CheckCircle2, MoreHorizontal, Building2, MapPin, CheckCircle, Grid, AlertTriangle
+} from 'lucide-react';
 import { createSystemUser } from '../utils/adminAuth';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -39,18 +44,18 @@ class ErrorBoundary extends React.Component {
 }
 
 export default function AdminDashboard() {
+    const { currentUser: authUser, userRole } = useAuth();
     const [activeTab, setActiveTab] = useState('dashboard');
-    const { userRole } = useAuth();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-    // Modal State
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     const [confirmModal, setConfirmModal] = useState({
         open: false,
         title: '',
         message: '',
-        type: 'neutral', // neutral, danger, warning
+        type: 'neutral',
         onConfirm: null
     });
+    const [currentUser, setCurrentUser] = useState(null);
 
     const requestConfirm = (title, message, onConfirm, type = 'neutral') => {
         setConfirmModal({ open: true, title, message, onConfirm, type });
@@ -61,27 +66,26 @@ export default function AdminDashboard() {
         setConfirmModal({ ...confirmModal, open: false });
     };
 
-    // console.log("AdminDashboard Loaded Clean");
-
-    const [currentUser, setCurrentUser] = useState(null);
-
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 768);
         window.addEventListener('resize', handleResize);
 
-        // Fetch User Info
-        if (auth.currentUser) {
-            const unsub = onSnapshot(doc(db, "users", auth.currentUser.uid), (doc) => {
-                if (doc.exists()) setCurrentUser(doc.data());
-            });
-            return () => {
-                window.removeEventListener('resize', handleResize);
-                unsub();
+        // Fetch User Info from Supabase
+        const fetchUserData = async () => {
+            if (authUser) {
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('id', authUser.id)
+                    .single();
+                if (data) setCurrentUser(data);
             }
-        }
+        };
+
+        fetchUserData();
 
         return () => window.removeEventListener('resize', handleResize);
-    }, []);
+    }, [authUser]);
 
     const toggleMenu = () => setMobileMenuOpen(!mobileMenuOpen);
     const closeMenu = () => { if (isMobile) setMobileMenuOpen(false); };
@@ -106,9 +110,18 @@ export default function AdminDashboard() {
                             )}
                         </h1>
                     </div>
-                    <button onClick={toggleMenu} style={{ background: 'none', border: 'none', color: 'white' }}>
-                        {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-                    </button>
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <button
+                            onClick={() => window.location.reload()}
+                            style={{ background: '#1E293B', border: 'none', color: '#60A5FA', padding: '0.4rem', borderRadius: '0.5rem', display: 'flex' }}
+                            title="Actualizar Datos"
+                        >
+                            <Clock size={20} />
+                        </button>
+                        <button onClick={toggleMenu} style={{ background: 'none', border: 'none', color: 'white' }}>
+                            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                        </button>
+                    </div>
                 </div>
             )}
 
@@ -128,6 +141,11 @@ export default function AdminDashboard() {
                 overflowY: 'auto'
             }}>
                 {/* ... Sidebar Content ... */}
+                {userRole === null && !loading && (
+                    <div style={{ padding: '0.5rem', background: '#1E293B', borderRadius: '0.4rem', marginBottom: '1rem', fontSize: '0.8rem', color: '#94A3B8' }}>
+                        🕒 Validando permisos...
+                    </div>
+                )}
                 {!isMobile && (
                     <div style={{ marginBottom: '3rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <div style={{ background: '#2563EB', padding: '0.5rem', borderRadius: '0.5rem' }}>
@@ -157,6 +175,9 @@ export default function AdminDashboard() {
                     <NavBtn icon={<UserCheck size={20} />} label="Control de Turnos" active={activeTab === 'shifts'} onClick={() => { setActiveTab('shifts'); closeMenu(); }} />
                     {userRole === 'admin' && <NavBtn icon={<Building2 size={20} />} label="Gestión Sedes" active={activeTab === 'locations'} onClick={() => { setActiveTab('locations'); closeMenu(); }} />}
 
+                    <div style={{ margin: '0.5rem 0', borderTop: '1px solid #1E293B' }}></div>
+                    <NavBtn icon={<Clock size={20} />} label="Actualizar Datos" onClick={() => window.location.reload()} />
+
                     {userRole === 'admin' && (
                         <>
                             <NavBtn icon={<Shield size={20} />} label="Usuarios Sistema" active={activeTab === 'system_users'} onClick={() => { setActiveTab('system_users'); closeMenu(); }} />
@@ -181,18 +202,18 @@ export default function AdminDashboard() {
                                 fontWeight: 'bold', fontSize: '1.1rem',
                                 flexShrink: 0
                             }}>
-                                {(currentUser.fullName || currentUser.username || "U")[0].toUpperCase()}
+                                {(currentUser.full_name || currentUser.username || "U")[0].toUpperCase()}
                             </div>
                             <div style={{ flex: 1, overflow: 'hidden' }}>
                                 <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    {currentUser.fullName || currentUser.username}
+                                    {currentUser.full_name || currentUser.username}
                                 </div>
                                 <div style={{ fontSize: '0.75rem', color: '#94A3B8', textTransform: 'capitalize' }}>
                                     {currentUser.role || userRole}
                                 </div>
                             </div>
                             <button
-                                onClick={() => signOut(auth)}
+                                onClick={() => supabase.auth.signOut()}
                                 className="btn-icon"
                                 style={{
                                     color: '#EF4444', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #EF4444',
@@ -231,7 +252,7 @@ export default function AdminDashboard() {
                         {!isMobile && currentUser && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                 <div style={{ textAlign: 'right', lineHeight: '1.2' }}>
-                                    <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#1E293B' }}>{currentUser.fullName || currentUser.username}</div>
+                                    <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#1E293B' }}>{currentUser.full_name || currentUser.username}</div>
                                     <div style={{ fontSize: '0.75rem', color: '#64748B', textTransform: 'capitalize' }}>{currentUser.role || userRole}</div>
                                 </div>
                                 <div style={{
@@ -240,10 +261,10 @@ export default function AdminDashboard() {
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     fontWeight: 'bold', fontSize: '1rem'
                                 }}>
-                                    {(currentUser.fullName || currentUser.username || "U")[0].toUpperCase()}
+                                    {(currentUser.full_name || currentUser.username || "U")[0].toUpperCase()}
                                 </div>
                                 <button
-                                    onClick={() => signOut(auth)}
+                                    onClick={() => supabase.auth.signOut()}
                                     className="btn-icon"
                                     style={{
                                         color: '#EF4444', background: '#FEF2F2', border: '1px solid #FECACA',
@@ -373,17 +394,31 @@ function DashboardView({ isMobile, onAction }) {
     // ... existing logic ...
     const [vehicles, setVehicles] = useState([]);
 
+    const fetchVehicles = async () => {
+        const { data } = await supabase
+            .from('active_parking')
+            .select('*');
+        if (data) setVehicles(data);
+    };
+
     useEffect(() => {
-        const q = query(collection(db, "active_parking"));
-        const unsubscribe = onSnapshot(q, (snap) => {
-            const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            setVehicles(data);
-        });
-        return unsubscribe;
+        fetchVehicles();
+
+        // Suscribirse a cambios en tiempo real
+        const channel = supabase
+            .channel('active_parking_changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'active_parking' }, (payload) => {
+                fetchVehicles();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
 
-    const autos = vehicles.filter(v => v.vehicleType === 'auto').length;
-    const motos = vehicles.filter(v => v.vehicleType === 'moto').length;
+    const autos = vehicles.filter(v => v.vehicle_type === 'auto').length;
+    const motos = vehicles.filter(v => v.vehicle_type === 'moto').length;
     const libres = vehicles.filter(v => v.type === 'libre').length;
 
     return (
@@ -410,7 +445,7 @@ function DashboardView({ isMobile, onAction }) {
                         {vehicles
                             .map(v => ({
                                 ...v,
-                                durationMs: v.entryTime && v.entryTime.toDate ? (new Date() - v.entryTime.toDate()) : 0
+                                durationMs: v.entry_time ? (new Date() - new Date(v.entry_time)) : 0
                             }))
                             .sort((a, b) => b.durationMs - a.durationMs)
                             .slice(0, 5)
@@ -433,7 +468,7 @@ function DashboardView({ isMobile, onAction }) {
                                             </span>
                                         </div>
                                         <div style={{ fontSize: '0.8rem', color: '#64748B', marginBottom: '0.1rem' }}>
-                                            {v.driverName ? v.driverName.substring(0, 15) + (v.driverName.length > 15 ? '...' : '') : 'Desc.'}
+                                            {v.driver_name ? v.driver_name.substring(0, 15) + (v.driver_name.length > 15 ? '...' : '') : 'Desc.'}
                                         </div>
                                         <div style={{ fontWeight: 'bold', fontSize: '0.85rem', color: i === 0 ? '#DC2626' : '#0F172A', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                                             <Clock size={12} />
@@ -473,13 +508,13 @@ function DashboardView({ isMobile, onAction }) {
                                 <tr key={v.id}>
                                     <td style={{ padding: '0.5rem' }}><span style={{ fontFamily: 'monospace', fontWeight: 'bold', background: '#F1F5F9', padding: '0.1rem 0.3rem', borderRadius: '3px' }}>{v.plate}</span></td>
                                     <td style={{ padding: '0.5rem' }}>
-                                        <div style={{ fontWeight: 500 }}>{v.driverName}</div>
+                                        <div style={{ fontWeight: 500 }}>{v.driver_name}</div>
                                     </td>
-                                    {!isMobile && <td style={{ textTransform: 'capitalize', padding: '0.5rem' }}>{v.vehicleType}</td>}
+                                    {!isMobile && <td style={{ textTransform: 'capitalize', padding: '0.5rem' }}>{v.vehicle_type}</td>}
                                     <td style={{ padding: '0.5rem' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#64748B' }}>
                                             <Clock size={12} />
-                                            {v.entryTime && v.entryTime.toDate ? v.entryTime.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
+                                            {v.entry_time ? new Date(v.entry_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
                                         </div>
                                     </td>
                                     <td style={{ padding: '0.5rem' }}><span className="badge badge-success" style={{ fontSize: '0.7rem', padding: '0.1rem 0.3rem' }}>Activo</span></td>
@@ -492,14 +527,18 @@ function DashboardView({ isMobile, onAction }) {
                                                 `¿Estás seguro de forzar la salida del vehículo ${v.plate}? Esta acción quedará registrada como una incidencia administrativa.`,
                                                 async () => {
                                                     try {
-                                                        await addDoc(collection(db, "history"), {
+                                                        const { error: histError } = await supabase.from('history').insert({
                                                             ...v,
-                                                            exitTime: serverTimestamp(),
+                                                            exit_time: new Date().toISOString(),
                                                             status: 'completed_forced_admin',
                                                             notes: 'Salida Forzada por Admin'
                                                         });
-                                                        await deleteDoc(doc(db, "active_parking", v.id));
-                                                    } catch (e) { alert("Error"); }
+                                                        if (histError) throw histError;
+
+                                                        const { error: delError } = await supabase.from('active_parking').delete().eq('id', v.id);
+                                                        if (delError) throw delError;
+                                                        fetchVehicles(); // Forzamos recarga
+                                                    } catch (e) { console.error(e); alert("Error"); }
                                                 },
                                                 'danger'
                                             )}
@@ -522,20 +561,33 @@ function VisualMapView({ isMobile, onAction }) {
     const [vehicles, setVehicles] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const fetchVehicles = async () => {
+        const { data } = await supabase
+            .from('active_parking')
+            .select('*');
+        if (data) setVehicles(data);
+        setLoading(false);
+    };
+
     useEffect(() => {
-        const q = query(collection(db, "active_parking"));
-        const unsubscribe = onSnapshot(q, (snap) => {
-            const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            setVehicles(data);
-            setLoading(false);
-        });
-        return unsubscribe;
+        fetchVehicles();
+
+        const channel = supabase
+            .channel('visual_map_changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'active_parking' }, (payload) => {
+                fetchVehicles();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
 
     // Helper to calculate duration
     const getDuration = (entryTime) => {
-        if (!entryTime || !entryTime.toDate) return '0 min';
-        const start = entryTime.toDate();
+        if (!entryTime) return '0 min';
+        const start = new Date(entryTime);
         const diff = new Date() - start;
         const totalMinutes = Math.floor(diff / 60000);
         const hours = Math.floor(totalMinutes / 60);
@@ -561,7 +613,7 @@ function VisualMapView({ isMobile, onAction }) {
                         flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        borderTop: `4px solid ${v.vehicleType === 'moto' ? '#9333EA' : '#2563EB'}`,
+                        borderTop: `4px solid ${v.vehicle_type === 'moto' ? '#9333EA' : '#2563EB'}`,
                         position: 'relative'
                     }}>
                         <button
@@ -572,14 +624,18 @@ function VisualMapView({ isMobile, onAction }) {
                                     `¿Deseas registrar la salida forzada (Admin) del vehículo ${v.plate}?`,
                                     async () => {
                                         try {
-                                            await addDoc(collection(db, "history"), {
+                                            const { error: histError } = await supabase.from('history').insert({
                                                 ...v,
-                                                exitTime: serverTimestamp(),
+                                                exit_time: new Date().toISOString(),
                                                 status: 'completed_forced_admin',
                                                 notes: 'Salida Forzada por Admin'
                                             });
-                                            await deleteDoc(doc(db, "active_parking", v.id));
-                                        } catch (e) { alert("Error"); }
+                                            if (histError) throw histError;
+
+                                            const { error: delError = null } = await supabase.from('active_parking').delete().eq('id', v.id);
+                                            if (delError) throw delError;
+                                            fetchVehicles(); // Forzamos recarga
+                                        } catch (e) { console.error(e); alert("Error"); }
                                     },
                                     'danger'
                                 );
@@ -598,13 +654,13 @@ function VisualMapView({ isMobile, onAction }) {
                         </button>
 
                         <div style={{
-                            background: v.vehicleType === 'moto' ? '#F3E8FF' : '#EFF6FF',
+                            background: v.vehicle_type === 'moto' ? '#F3E8FF' : '#EFF6FF',
                             padding: '1.5rem',
                             borderRadius: '50%',
                             marginBottom: '1rem',
-                            color: v.vehicleType === 'moto' ? '#9333EA' : '#2563EB'
+                            color: v.vehicle_type === 'moto' ? '#9333EA' : '#2563EB'
                         }}>
-                            {v.vehicleType === 'moto' ? <Bike size={32} /> : <Car size={32} />}
+                            {v.vehicle_type === 'moto' ? <Bike size={32} /> : <Car size={32} />}
                         </div>
 
                         <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.25rem', fontFamily: 'monospace' }}>
@@ -684,38 +740,53 @@ function KPICard({ title, value, icon, color, trend }) {
 function PersonnelView({ isMobile, onAction }) {
     const [personnel, setPersonnel] = useState([]);
     const [showForm, setShowForm] = useState(false);
-    const [newItem, setNewItem] = useState({ fullName: '', dni: '', role: '', licensePlate: '', vehicleType: 'auto' });
+    const [newItem, setNewItem] = useState({ full_name: '', dni: '', role: '', license_plate: '', vehicle_type: 'auto' });
     const [uploading, setUploading] = useState(false);
 
+    const fetchPersonnel = async () => {
+        const { data } = await supabase
+            .from('personnel')
+            .select('*')
+            .order('created_at', { ascending: false });
+        if (data) setPersonnel(data);
+    };
+
     useEffect(() => {
-        const q = query(collection(db, "personnel"), orderBy("createdAt", "desc"));
-        const unsubscribe = onSnapshot(q, (snap) => {
-            setPersonnel(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-        });
-        return unsubscribe;
+        fetchPersonnel();
+
+        const channel = supabase
+            .channel('personnel_changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'personnel' }, (payload) => {
+                fetchPersonnel();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!newItem.fullName || !newItem.licensePlate) return;
-
         try {
-            const names = newItem.fullName.split(' ');
-            const firstName = names[0];
-            const lastName = names.slice(1).join(' ') || '';
+            const names = newItem.full_name.split(' ');
+            const first_name = names[0];
+            const last_name = names.slice(1).join(' ') || '';
 
-            await addDoc(collection(db, "personnel"), {
-                firstName,
-                lastName,
-                fullName: newItem.fullName,
+            const { error } = await supabase.from('personnel').insert({
+                first_name,
+                last_name,
+                full_name: newItem.full_name,
                 dni: newItem.dni,
                 role: newItem.role,
-                licensePlate: newItem.licensePlate.toUpperCase(),
-                vehicleType: newItem.vehicleType,
-                createdAt: serverTimestamp()
+                license_plate: newItem.license_plate.toUpperCase(),
+                vehicle_type: newItem.vehicle_type,
+                created_at: new Date().toISOString()
             });
+            if (error) throw error;
             setShowForm(false);
-            setNewItem({ fullName: '', dni: '', role: '', licensePlate: '', vehicleType: 'auto' });
+            setNewItem({ full_name: '', dni: '', role: '', license_plate: '', vehicle_type: 'auto' });
+            fetchPersonnel(); // Forzamos recarga
         } catch (error) {
             console.error("Error creating personal:", error);
             alert("Error al guardar personal");
@@ -728,9 +799,11 @@ function PersonnelView({ isMobile, onAction }) {
             '¿Está seguro de eliminar este registro? Esta acción no se puede deshacer.',
             async () => {
                 try {
-                    await deleteDoc(doc(db, "personnel", id));
+                    const { error } = await supabase.from('personnel').delete().eq('id', id);
+                    if (error) throw error;
+                    fetchPersonnel(); // Forzamos recarga
                 } catch (error) {
-                    console.error("Error creating personal:", error);
+                    console.error("Error deleting personnel:", error);
                 }
             },
             'danger'
@@ -782,7 +855,7 @@ function PersonnelView({ isMobile, onAction }) {
                         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
                             <div className="input-group">
                                 <label className="label">Nombre Completo</label>
-                                <input className="input" required value={newItem.fullName} onChange={e => setNewItem({ ...newItem, fullName: e.target.value })} placeholder="Ej: Dr. Juan Perez" />
+                                <input className="input" required value={newItem.full_name} onChange={e => setNewItem({ ...newItem, full_name: e.target.value })} placeholder="Ej: Dr. Juan Perez" />
                             </div>
                             <div className="input-group">
                                 <label className="label">DNI</label>
@@ -794,11 +867,11 @@ function PersonnelView({ isMobile, onAction }) {
                             </div>
                             <div className="input-group">
                                 <label className="label">Placa</label>
-                                <input className="input" required value={newItem.licensePlate} onChange={e => setNewItem({ ...newItem, licensePlate: e.target.value.toUpperCase() })} placeholder="ABC-123" />
+                                <input className="input" required value={newItem.license_plate} onChange={e => setNewItem({ ...newItem, license_plate: e.target.value.toUpperCase() })} placeholder="ABC-123" />
                             </div>
                             <div className="input-group">
                                 <label className="label">Tipo</label>
-                                <select className="input" value={newItem.vehicleType} onChange={e => setNewItem({ ...newItem, vehicleType: e.target.value })}>
+                                <select className="input" value={newItem.vehicle_type} onChange={e => setNewItem({ ...newItem, vehicle_type: e.target.value })}>
                                     <option value="auto">Auto</option>
                                     <option value="moto">Moto</option>
                                 </select>
@@ -821,19 +894,19 @@ function PersonnelView({ isMobile, onAction }) {
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 color: '#2563EB', fontWeight: 'bold', fontSize: '1rem'
                             }}>
-                                {(p.firstName && p.firstName[0]) ? p.firstName[0] : (p.fullName ? p.fullName[0] : '?')}
+                                {(p.first_name && p.first_name[0]) ? p.first_name[0] : (p.full_name ? p.full_name[0] : '?')}
                             </div>
                             <div style={{ overflow: 'hidden', paddingRight: '1.5rem', flex: 1 }}>
                                 <h3 style={{ fontSize: '0.95rem', fontWeight: 600, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    {p.firstName ? `${p.firstName} ${p.lastName || ''}` : p.fullName}
+                                    {p.first_name ? `${p.first_name} ${p.last_name || ''}` : p.full_name}
                                 </h3>
                                 <div style={{ color: '#64748B', fontSize: '0.75rem' }}>{p.role}</div>
                             </div>
                         </div>
                         <div style={{ background: '#F8FAFC', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontFamily: 'monospace', fontWeight: 'bold', fontSize: '0.95rem' }}>{p.licensePlate}</span>
-                            <div className={`badge ${p.vehicleType === 'moto' ? 'badge-warning' : 'badge-primary'}`} style={{ fontSize: '0.7rem', padding: '0.1rem 0.4rem' }}>
-                                {p.vehicleType === 'moto' ? 'Moto' : 'Auto'}
+                            <span style={{ fontFamily: 'monospace', fontWeight: 'bold', fontSize: '0.95rem' }}>{p.license_plate}</span>
+                            <div className={`badge ${p.vehicle_type === 'moto' ? 'badge-warning' : 'badge-primary'}`} style={{ fontSize: '0.7rem', padding: '0.1rem 0.4rem' }}>
+                                {p.vehicle_type === 'moto' ? 'Moto' : 'Auto'}
                             </div>
                         </div>
                         <button className="btn-icon" onClick={() => handleDelete(p.id)} style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', color: '#EF4444' }}><Trash2 size={14} /></button>
@@ -864,15 +937,34 @@ function HistoryView({ isMobile }) {
     const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
-        // Increased limit to 100 to allow better client-side filtering
-        const q = query(collection(db, "history"), orderBy("entryTime", "desc"), limit(100));
-        const unsubscribe = onSnapshot(q, (snap) => setHistory(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-        return unsubscribe;
+        const fetchHistory = async () => {
+            const { data, error } = await supabase
+                .from('history')
+                .select('*')
+                .order('exit_time', { ascending: false })
+                .limit(50);
+            if (data) setHistory(data);
+        };
+
+        fetchHistory();
+
+        const channel = supabase
+            .channel('history_changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'history' }, (payload) => {
+                fetchHistory();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
 
     const formatDuration = (start, end) => {
         if (!start || !end) return '-';
-        const diff = end - start;
+        const startDate = start instanceof Date ? start : new Date(start);
+        const endDate = end instanceof Date ? end : new Date(end);
+        const diff = endDate.getTime() - startDate.getTime();
         if (diff < 0) return '-';
 
         const totalMinutes = Math.floor(diff / 60000);
@@ -887,8 +979,8 @@ function HistoryView({ isMobile }) {
 
     const filteredHistory = history.filter(h =>
         (h.plate && h.plate.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (h.driverName && h.driverName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (h.agentName && h.agentName.toLowerCase().includes(searchTerm.toLowerCase()))
+        (h.driver_name && h.driver_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (h.agent_name && h.agent_name.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
     return (
@@ -911,8 +1003,8 @@ function HistoryView({ isMobile }) {
             {isMobile ? (
                 <div className="grid-dashboard" style={{ gridTemplateColumns: '1fr', gap: '0.5rem' }}>
                     {filteredHistory.map(h => {
-                        const start = h.entryTime && h.entryTime.toDate ? h.entryTime.toDate() : null;
-                        const end = h.exitTime && h.exitTime.toDate ? h.exitTime.toDate() : null;
+                        const start = h.entry_time ? new Date(h.entry_time) : null;
+                        const end = h.exit_time ? new Date(h.exit_time) : null;
                         const duration = formatDuration(start, end);
                         return (
                             <div key={h.id} className="card" style={{ padding: '0.75rem' }}>
@@ -920,7 +1012,7 @@ function HistoryView({ isMobile }) {
                                     <span style={{ fontWeight: 'bold', fontFamily: 'monospace', fontSize: '1rem' }}>{h.plate}</span>
                                     <span className="badge badge-primary" style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem' }}>{duration}</span>
                                 </div>
-                                <div style={{ fontSize: '0.85rem', color: '#1E293B', marginBottom: '0.25rem' }}>{h.driverName}</div>
+                                <div style={{ fontSize: '0.85rem', color: '#1E293B', marginBottom: '0.25rem' }}>{h.driver_name}</div>
                                 {h.hospital && <div style={{ fontSize: '0.75rem', color: '#2563EB', marginBottom: '0.25rem' }}>{h.hospital} - {h.gate}</div>}
                                 <div style={{ fontSize: '0.75rem', color: '#64748B', display: 'flex', justifyContent: 'space-between' }}>
                                     <span>In: {start ? start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</span>
@@ -947,15 +1039,15 @@ function HistoryView({ isMobile }) {
                             </thead>
                             <tbody>
                                 {filteredHistory.map(h => {
-                                    const start = h.entryTime && h.entryTime.toDate ? h.entryTime.toDate() : null;
-                                    const end = h.exitTime && h.exitTime.toDate ? h.exitTime.toDate() : null;
+                                    const start = h.entry_time ? new Date(h.entry_time) : null;
+                                    const end = h.exit_time ? new Date(h.exit_time) : null;
                                     const duration = formatDuration(start, end);
                                     return (
                                         <tr key={h.id}>
                                             <td><span style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{h.plate}</span></td>
                                             <td>
-                                                <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>{h.driverName}</div>
-                                                {h.agentName && <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>Por: {h.agentName}</div>}
+                                                <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>{h.driver_name}</div>
+                                                {h.agent_name && <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>Por: {h.agent_name}</div>}
                                             </td>
                                             <td>
                                                 <div style={{ fontSize: '0.85rem', color: '#2563EB', fontWeight: 500 }}>{h.hospital || '-'}</div>
@@ -987,32 +1079,63 @@ function ShiftsView({ isMobile }) {
     const { userRole } = useAuth();
     const [editingGateUserId, setEditingGateUserId] = useState(null);
 
+    const fetchUsers = async () => {
+        const { data } = await supabase
+            .from('users')
+            .select('*')
+            .in('role', ['agent', 'supervisor']);
+        if (data) setUsers(data);
+    };
+
     useEffect(() => {
-        const q = query(collection(db, "users"), where("role", "==", "agent"));
-        const unsubscribe = onSnapshot(q, (snap) => setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-        return unsubscribe;
+        fetchUsers();
+
+        const channel = supabase
+            .channel('shifts_changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, (payload) => {
+                fetchUsers();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
 
     useEffect(() => {
-        const q = query(collection(db, "locations"), orderBy("name"));
-        return onSnapshot(q, snap => setLocations(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+        const fetchLocations = async () => {
+            const { data } = await supabase.from('locations').select('*').order('name');
+            if (data) setLocations(data);
+        };
+        fetchLocations();
     }, []);
 
     const toggleShift = async (user) => {
         try {
-            await updateDoc(doc(db, "users", user.id), {
-                onShift: !user.onShift,
-                lastShiftUpdate: serverTimestamp()
-            });
-        } catch (e) { console.error(e); }
-    }
+            const { error } = await supabase
+                .from('users')
+                .update({ on_shift: !user.on_shift, last_shift_update: new Date().toISOString() })
+                .eq('id', user.id);
+            if (error) throw error;
+            fetchUsers(); // Forzamos recarga
+        } catch (error) {
+            console.error("Error toggling shift:", error);
+        }
+    };
 
     const updateGate = async (userId, newGate) => {
         try {
-            await updateDoc(doc(db, "users", userId), { gate: newGate });
-            setEditingGateUserId(null);
-        } catch (e) { console.error(e); alert("Error al actualizar puerta"); }
-    }
+            const { error } = await supabase
+                .from('users')
+                .update({ gate: newGate })
+                .eq('id', userId);
+            if (error) throw error;
+            fetchUsers(); // Forzamos recarga
+        } catch (error) {
+            console.error("Error updating gate:", error);
+            alert("Error al actualizar puerta");
+        }
+    };
 
     return (
         <div className="fade-in">
@@ -1028,8 +1151,8 @@ function ShiftsView({ isMobile }) {
                     return (
                         <div key={u.id} className="card" style={{
                             padding: '0.75rem',
-                            border: u.onShift ? '1px solid #86EFAC' : '1px solid #E2E8F0',
-                            background: u.onShift ? '#F0FDF4' : '#FFFFFF',
+                            border: u.on_shift ? '1px solid #86EFAC' : '1px solid #E2E8F0',
+                            background: u.on_shift ? '#F0FDF4' : '#FFFFFF',
                             transition: 'all 0.2s',
                             display: 'flex', flexDirection: 'column', gap: '0.75rem'
                         }}>
@@ -1037,9 +1160,9 @@ function ShiftsView({ isMobile }) {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                     <div style={{
                                         width: '32px', height: '32px', borderRadius: '50%',
-                                        background: u.onShift ? '#DCFCE7' : '#F1F5F9',
+                                        background: u.on_shift ? '#DCFCE7' : '#F1F5F9',
                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        color: u.onShift ? '#16A34A' : '#64748B'
+                                        color: u.on_shift ? '#16A34A' : '#64748B'
                                     }}>
                                         <Shield size={16} />
                                     </div>
@@ -1071,8 +1194,8 @@ function ShiftsView({ isMobile }) {
                                         </div>
                                     </div>
                                 </div>
-                                <div className={`badge ${u.onShift ? 'badge-success' : 'badge-warning'}`} style={{ fontSize: '0.65rem', padding: '0.15rem 0.4rem' }}>
-                                    {u.onShift ? 'ACTIVO' : 'INACTIVO'}
+                                <div className={`badge ${u.on_shift ? 'badge-success' : 'badge-warning'}`} style={{ fontSize: '0.65rem', padding: '0.15rem 0.4rem' }}>
+                                    {u.on_shift ? 'ACTIVO' : 'INACTIVO'}
                                 </div>
                             </div>
 
@@ -1084,14 +1207,14 @@ function ShiftsView({ isMobile }) {
                                     padding: '0.4rem',
                                     fontSize: '0.8rem',
                                     display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.4rem',
-                                    background: u.onShift ? '#FEF2F2' : '#F0FDF4',
-                                    border: `1px solid ${u.onShift ? '#FECACA' : '#BBF7D0'}`,
-                                    color: u.onShift ? '#DC2626' : '#16A34A',
+                                    background: u.on_shift ? '#FEF2F2' : '#F0FDF4',
+                                    border: `1px solid ${u.on_shift ? '#FECACA' : '#BBF7D0'}`,
+                                    color: u.on_shift ? '#DC2626' : '#16A34A',
                                     fontWeight: 600,
                                     borderRadius: '0.375rem'
                                 }}
                             >
-                                {u.onShift ? <><LogOut size={14} /> Cerrar Turno</> : <><CheckCircle size={14} /> Habilitar Turno</>}
+                                {u.on_shift ? <><LogOut size={14} /> Cerrar Turno</> : <><CheckCircle size={14} /> Habilitar Turno</>}
                             </button>
                         </div>
                     );
@@ -1104,22 +1227,42 @@ function ShiftsView({ isMobile }) {
 function SystemUsersView() {
     const [users, setUsers] = useState([]);
     const [showForm, setShowForm] = useState(false);
-    const [newUser, setNewUser] = useState({ username: '', password: '', role: 'agent', dni: '', fullName: '', phone: '', hospital: '', gate: '' });
+    const [newUser, setNewUser] = useState({ username: '', password: '', role: 'agent', dni: '', full_name: '', phone: '', hospital: '', gate: '' });
     const [editingUser, setEditingUser] = useState(null);
     const [loading, setLoading] = useState(false);
     const [msg, setMsg] = useState('');
 
+    const fetchUsers = async () => {
+        const { data } = await supabase
+            .from('users')
+            .select('*')
+            .eq('is_system_user', true);
+        if (data) setUsers(data);
+    };
+
     useEffect(() => {
-        const q = query(collection(db, "users"), where("isSystemUser", "==", true));
-        const unsubscribe = onSnapshot(q, (snap) => setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-        return unsubscribe;
+        fetchUsers();
+
+        const channel = supabase
+            .channel('system_users_changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, (payload) => {
+                fetchUsers();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
 
     // Fetch locations for dropdown
     const [locations, setLocations] = useState([]);
     useEffect(() => {
-        const q = query(collection(db, "locations"), orderBy("name"));
-        return onSnapshot(q, snap => setLocations(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+        const fetchLocations = async () => {
+            const { data } = await supabase.from('locations').select('*').order('name');
+            if (data) setLocations(data);
+        };
+        fetchLocations();
     }, []);
 
     const selectedLoc = locations.find(l => l.name === newUser.hospital);
@@ -1131,22 +1274,27 @@ function SystemUsersView() {
         setMsg('');
 
         if (editingUser) {
-            // Update logic (Firestore only)
+            // Update logic (Supabase)
             try {
-                await updateDoc(doc(db, "users", editingUser.id), {
-                    dni: newUser.dni,
-                    fullName: newUser.fullName,
-                    phone: newUser.phone,
-                    hospital: newUser.hospital,
-                    gate: newUser.gate,
-                    role: newUser.role,
-                    // username/email/password cant be easily updated without admin SDK or re-auth, 
-                    // so we skip them or warn user. For now only metadata.
-                });
+                const { error } = await supabase
+                    .from('users')
+                    .update({
+                        dni: newUser.dni,
+                        full_name: newUser.full_name,
+                        phone: newUser.phone,
+                        hospital: newUser.hospital,
+                        gate: newUser.gate,
+                        role: newUser.role,
+                    })
+                    .eq('id', editingUser.id);
+
+                if (error) throw error;
+
                 alert('Usuario actualizado. Nota: Credenciales (Usuario/Pass) no se cambian aquí.');
                 setShowForm(false);
-                setNewUser({ username: '', password: '', role: 'agent', dni: '', fullName: '', phone: '', hospital: '', gate: '' });
+                setNewUser({ username: '', password: '', role: 'agent', dni: '', full_name: '', phone: '', hospital: '', gate: '' });
                 setEditingUser(null);
+                fetchUsers(); // Forzamos recarga
             } catch (err) {
                 console.error(err);
                 setMsg('Error al actualizar: ' + err.message);
@@ -1155,7 +1303,7 @@ function SystemUsersView() {
             // Create logic
             const res = await createSystemUser(newUser.username, newUser.password, newUser.role, {
                 dni: newUser.dni,
-                fullName: newUser.fullName,
+                full_name: newUser.full_name,
                 phone: newUser.phone,
                 hospital: newUser.hospital,
                 gate: newUser.gate
@@ -1163,8 +1311,9 @@ function SystemUsersView() {
 
             if (res.success) {
                 setShowForm(false);
-                setNewUser({ username: '', password: '', role: 'agent', dni: '', fullName: '', phone: '', hospital: '', gate: '' });
+                setNewUser({ username: '', password: '', role: 'agent', dni: '', full_name: '', phone: '', hospital: '', gate: '' });
                 alert('Usuario creado correctamente!');
+                fetchUsers(); // Forzamos recarga
             } else {
                 setMsg('Error: ' + res.error);
             }
@@ -1179,7 +1328,7 @@ function SystemUsersView() {
             password: '', // Password field blank on edit
             role: user.role,
             dni: user.dni || '',
-            fullName: user.fullName || '',
+            full_name: user.full_name || '',
             phone: user.phone || '',
             hospital: user.hospital || '',
             gate: user.gate || ''
@@ -1190,31 +1339,32 @@ function SystemUsersView() {
     const cancelEdit = () => {
         setShowForm(false);
         setEditingUser(null);
-        setNewUser({ username: '', password: '', role: 'agent', dni: '', fullName: '', phone: '', hospital: '', gate: '' });
+        setNewUser({ username: '', password: '', role: 'agent', dni: '', full_name: '', phone: '', hospital: '', gate: '' });
     }
 
     const toggleStatus = async (user) => {
-        if (!confirm(`¿${user.isDisabled ? 'Habilitar' : 'Inhabilitar'} usuario ${user.username}?`)) return;
         try {
-            await updateDoc(doc(db, "users", user.id), {
-                isDisabled: !user.isDisabled
-            });
-        } catch (e) {
-            console.error(e);
-            alert("Error al actualizar estado");
+            const { error } = await supabase
+                .from('users')
+                .update({ is_disabled: !user.is_disabled })
+                .eq('id', user.id);
+            if (error) throw error;
+            fetchUsers();
+        } catch (error) {
+            console.error("Error toggling status:", error);
         }
-    }
+    };
 
     const deleteUser = async (user) => {
-        if (!confirm(`¿Estás seguro de ELIMINAR al usuario ${user.username}? Esta acción no se puede deshacer.`)) return;
+        if (!confirm(`¿Eliminar definitivamente a ${user.username}?`)) return;
         try {
-            await deleteDoc(doc(db, "users", user.id));
-            alert("Usuario eliminado correctamente.");
-        } catch (e) {
-            console.error(e);
-            alert("Error al eliminar usuario: " + e.message);
+            const { error } = await supabase.from('users').delete().eq('id', user.id);
+            if (error) throw error;
+            fetchUsers();
+        } catch (error) {
+            console.error("Error deleting user:", error);
         }
-    }
+    };
 
     return (
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
@@ -1253,7 +1403,7 @@ function SystemUsersView() {
                                 </div>
                                 <div className="input-group" style={{ gridColumn: 'span 2', marginBottom: 0 }}>
                                     <label className="label" style={{ fontSize: '0.75rem', marginBottom: '0.25rem' }}>Nombres y Apellidos</label>
-                                    <input className="input" required value={newUser.fullName} onChange={e => setNewUser({ ...newUser, fullName: e.target.value })} placeholder="Nombre Completo" style={{ padding: '0.4rem' }} />
+                                    <input className="input" required value={newUser.full_name} onChange={e => setNewUser({ ...newUser, full_name: e.target.value })} placeholder="Nombre Completo" style={{ padding: '0.4rem' }} />
                                 </div>
                                 <div className="input-group" style={{ marginBottom: 0 }}>
                                     <label className="label" style={{ fontSize: '0.75rem', marginBottom: '0.25rem' }}>Teléfono</label>
@@ -1354,7 +1504,7 @@ function SystemUsersView() {
                             </div>
                             <div>
                                 <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#0F172A', margin: 0 }}>{u.username}</h3>
-                                <p style={{ fontSize: '0.8rem', color: '#1E293B', margin: '2px 0 0 0', fontWeight: 500 }}>{u.fullName || 'Sin nombre'}</p>
+                                <p style={{ fontSize: '0.8rem', color: '#1E293B', margin: '2px 0 0 0', fontWeight: 500 }}>{u.full_name || 'Sin nombre'}</p>
                                 <p style={{ fontSize: '0.75rem', color: '#64748B', margin: 0 }}>
                                     {u.role === 'admin' ? 'Administrador' : u.role === 'supervisor' ? 'Supervisor' : 'Agente'}
                                 </p>
@@ -1375,12 +1525,12 @@ function SystemUsersView() {
                                 {u.role !== 'admin' && (
                                     <button
                                         onClick={() => toggleStatus(u)}
-                                        className={`badge ${u.isDisabled ? 'badge-danger' : 'badge-success'}`}
+                                        className={`badge ${u.is_disabled ? 'badge-danger' : 'badge-success'}`}
                                         style={{ fontSize: '0.7rem', padding: '0.2rem', cursor: 'pointer', border: 'none' }}
                                         title={u.isDisabled ? "Habilitar Acceso" : "Inhabilitar Acceso"}
                                     >
-                                        {u.isDisabled ? <Lock size={12} /> : <ShieldCheck size={12} />}
-                                        {u.isDisabled ? ' INACTIVO' : ' ACTIVO'}
+                                        {u.is_disabled ? <Lock size={12} /> : <ShieldCheck size={12} />}
+                                        {u.is_disabled ? ' INACTIVO' : ' ACTIVO'}
                                     </button>
                                 )}
                                 {(u.role === 'agent' || u.role === 'supervisor') && (
@@ -1393,7 +1543,7 @@ function SystemUsersView() {
                                         <Trash2 size={12} />
                                     </button>
                                 )}
-                                {u.onShift && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22C55E' }} title="Turno Activo"></div>}
+                                {u.on_shift && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22C55E' }} title="Turno Activo"></div>}
                             </div>
                         </div>
                     </div>
@@ -1409,43 +1559,60 @@ function LocationsView({ isMobile }) {
     const [newLocName, setNewLocName] = useState('');
 
     useEffect(() => {
-        const q = query(collection(db, "locations"), orderBy("name"));
-        const unsubscribe = onSnapshot(q, (snap) => setLocations(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-        return unsubscribe;
+        const fetchLocations = async () => {
+            const { data, error } = await supabase
+                .from('locations')
+                .select('*');
+            if (data) setLocations(data);
+        };
+
+        fetchLocations();
+
+        const channel = supabase
+            .channel('locations_changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'locations' }, (payload) => {
+                fetchLocations();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
+
+    const fetchLocations = async () => {
+        const { data } = await supabase.from('locations').select('*').order('name');
+        if (data) setLocations(data);
+    };
 
     const handleAddLoc = async (e) => {
         e.preventDefault();
-        if (!newLocName.trim()) return;
-        setLoading(true);
+        if (!newLocName) return;
         try {
-            await addDoc(collection(db, "locations"), {
-                name: newLocName.trim(),
-                gates: ['Principal'] // Default gate
-            });
+            await supabase.from('locations').insert({ name: newLocName, gates: [] });
             setNewLocName('');
-        } catch (error) {
-            console.error(error);
-            alert("Error al crear sede");
-        }
-        setLoading(false);
+            fetchLocations(); // <-- Forzamos recarga manual
+        } catch (e) { console.error(e); }
     };
 
     const handleDeleteLoc = async (id) => {
-        if (!confirm("¿Eliminar esta sede y todas sus configuraciones?")) return;
-        try { await deleteDoc(doc(db, "locations", id)); } catch (e) { alert("Error al eliminar"); }
+        if (!confirm('¿Eliminar sede?')) return;
+        await supabase.from('locations').delete().eq('id', id);
+        fetchLocations(); // <-- Forzamos recarga manual
     };
 
     const handleAddGate = async (loc, newGateName) => {
         if (!newGateName.trim()) return;
-        const updatedGates = [...(loc.gates || []), newGateName.trim()];
-        await updateDoc(doc(db, "locations", loc.id), { gates: updatedGates });
+        const newGates = [...(loc.gates || []), newGateName.trim()];
+        await supabase.from('locations').update({ gates: newGates }).eq('id', loc.id);
+        fetchLocations(); // <-- Forzamos recarga manual
     };
 
     const handleRemoveGate = async (loc, gateIdx) => {
         if (!confirm("¿Eliminar esta puerta?")) return;
-        const updatedGates = loc.gates.filter((_, i) => i !== gateIdx);
-        await updateDoc(doc(db, "locations", loc.id), { gates: updatedGates });
+        const newGates = loc.gates.filter((_, i) => i !== gateIdx);
+        await supabase.from('locations').update({ gates: newGates }).eq('id', loc.id);
+        fetchLocations(); // <-- Forzamos recarga manual
     };
 
     return (

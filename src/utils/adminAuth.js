@@ -1,36 +1,42 @@
-import { initializeApp } from "firebase/app";
-import { getAuth, createUserWithEmailAndPassword, signOut } from "firebase/auth";
-import { getFirestore, doc, setDoc } from "firebase/firestore";
-import { firebaseConfig } from "../firebase";
+import { supabase } from "../supabase";
 
 export const createSystemUser = async (username, password, role, additionalData = {}) => {
-    // 1. Initialize a SECOND app instance. 
-    // This prevents the main "auth" from switching to the new user.
-    const secondaryApp = initializeApp(firebaseConfig, "SecondaryApp");
-    const secondaryAuth = getAuth(secondaryApp);
-    const db = getFirestore(secondaryApp);
-
     const fakeEmail = `${username.toLowerCase().replace(/\s+/g, '')}@hospital.local`;
 
     try {
-        // 2. Create user in Secondary Auth
-        const userCredential = await createUserWithEmailAndPassword(secondaryAuth, fakeEmail, password);
-        const user = userCredential.user;
+        // En Supabase, si haces signUp te loguea automáticamente a menos que
+        // uses el Service Role Key (que no es seguro en el cliente).
+        // Por ahora, crearemos al usuario. El administrador tendrá que re-loguear
+        // si el sistema lo saca, o podemos advertir esto.
 
-        // 3. Create Firestore record (so roles work)
-        await setDoc(doc(db, "users", user.uid), {
-            username: username,
+        const { data: { user }, error: authError } = await supabase.auth.signUp({
             email: fakeEmail,
-            role: role,
-            createdAt: new Date(),
-            isSystemUser: true,
-            onShift: false, // Default to false for agents/supervisors
-            isDisabled: false, // For enabling/disabling access
-            ...additionalData // dni, fullName, phone, hospital, gate
+            password: password,
         });
 
-        // 4. Cleanup: Sign out the secondary auth so it doesn't linger (though it's isolated)
-        await signOut(secondaryAuth);
+        if (authError) throw authError;
+
+        if (user) {
+            const { error: dbError } = await supabase
+                .from('users')
+                .insert({
+                    id: user.id,
+                    username: username,
+                    email: fakeEmail,
+                    role: role,
+                    created_at: new Date().toISOString(),
+                    is_system_user: true,
+                    on_shift: false,
+                    is_disabled: false,
+                    ...additionalData
+                });
+
+            if (dbError) throw dbError;
+        }
+
+        // Importante: No cerramos sesión aquí porque si el Admin está creando usuarios,
+        // no queremos que se cierre su propia sesión (aunque signUp podría sobreescribirla).
+        // NOTA: En Supabase real, para evitar esto se usa una Edge Function o el Service Role.
 
         return { success: true };
 

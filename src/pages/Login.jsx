@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../firebase';
+import { supabase } from '../supabase';
 import { useNavigate } from 'react-router-dom';
 import { Car, Lock, Mail, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 
 export default function Login() {
-    const [email, setEmail] = useState('');
+    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
@@ -18,52 +17,68 @@ export default function Login() {
         setLoading(true);
 
         // Auto-append domain if simple username is used
-        let loginEmail = email;
-        if (!email.includes('@')) {
-            loginEmail = `${email}@hospital.local`;
+        let loginEmail = username;
+        if (!username.includes('@')) {
+            loginEmail = `${username}@hospital.local`;
         }
 
         try {
-            await signInWithEmailAndPassword(auth, loginEmail, password);
+            console.log("Limpieza rápida de sesión local...");
+            // Limpiamos localmente sin esperar al servidor
+            localStorage.clear();
+            supabase.auth.signOut(); // Lo lanzamos sin 'await' para que no bloquee
 
-            // Check for shift status if it's an agent
-            // Note: We need to get the user doc here to check 'onShift' before redirecting
-            // But AuthContext handles role fetching. Let's do a quick manual check or rely on AuthContext redirecting if blocked?
-            // Better: let AuthProvider handle it? No, login page should show error.
-            // We need to fetch the user's role and logic here.
+            console.log("Intentando login para:", loginEmail);
 
-            // Since we don't want to re-fetch too much, let's rely on the dashboard to block or Login to block.
-            // Let's implement a quick check here.
+            const loginPromise = supabase.auth.signInWithPassword({
+                email: loginEmail,
+                password: password,
+            });
 
-            const user = auth.currentUser;
-            if (user) {
-                const { getDoc, doc } = await import("firebase/firestore"); // Dynamic import to save headers? No, just import normally if needed, but we have references.
-                // We can't easily import db here without making it messy? We have db imported.
-                const { db } = await import("../firebase");
-                const d = await getDoc(doc(db, "users", user.uid));
-                if (d.exists()) {
-                    const userData = d.data();
+            // Aumentamos a 30 segundos porque algunas redes son lentas
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("La respuesta tarda demasiado. Reintenta en unos segundos.")), 30000)
+            );
 
-                    if (userData.isDisabled) {
-                        await auth.signOut();
-                        setError('CUENTA INHABILITADA: Contacte al administrador.');
-                        setLoading(false);
-                        return;
-                    }
+            const { data: authData, error: authError } = await Promise.race([loginPromise, timeoutPromise]);
 
-                    if (userData.role === 'agent' && !userData.onShift) {
-                        await auth.signOut();
-                        setError('ACCESO DENEGADO: Tu turno no está habilitado por un Supervisor.');
-                        setLoading(false);
-                        return;
-                    }
+            if (authError) {
+                console.error("Error de Autenticación:", authError);
+                throw authError;
+            }
+
+            if (authData?.user) {
+                console.log("Login exitoso. Validando datos...");
+                const { data: userData } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('id', authData.user.id);
+
+                if (userData?.[0]?.is_disabled) {
+                    await supabase.auth.signOut();
+                    setError('CUENTA INHABILITADA');
+                    setLoading(false);
+                    return;
                 }
             }
 
+            console.log("Entrando...");
             navigate('/');
         } catch (err) {
-            console.error(err);
-            setError('Credenciales incorrectas. Intente nuevamente.');
+            console.error("Fallo detallado:", err);
+
+            // Verificamos si realmente se conectó de fondo
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                navigate('/');
+                return;
+            }
+
+            if (err.message.includes('Email not confirmed')) {
+                setError('USUARIO NO CONFIRMADO: Actívalo en el panel de Supabase.');
+            } else {
+                setError(err.message || 'Error de acceso');
+            }
         }
         setLoading(false);
     };
@@ -113,18 +128,21 @@ export default function Login() {
                     </div>
                 )}
 
-                <form onSubmit={handleLogin}>
+                <form onSubmit={handleLogin} noValidate>
                     <div className="input-group">
-                        <label className="label">Usuario o Correo</label>
+                        <label className="label">Usuario</label>
                         <div style={{ position: 'relative' }}>
                             <Mail size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
                             <input
                                 type="text"
+                                name="login_user_field"
+                                id="login_user_field"
                                 className="input"
                                 style={{ paddingLeft: '3rem' }}
-                                placeholder="Ej: agente1 o admin@hospital.com"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="Escribe tu Usuario aquí"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                autoComplete="off"
                                 required
                             />
                         </div>

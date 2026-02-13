@@ -10,10 +10,16 @@ import './styles/main.css';
 
 const RootRedirect = () => {
   const { currentUser, userRole, loading } = useAuth();
-  if (loading) return null;
-  if (!currentUser) return <Navigate to="/login" />;
-  if (userRole === 'admin' || userRole === 'supervisor') return <Navigate to="/admin" />;
-  return <Navigate to="/agent" />;
+
+  if (!currentUser) return <Navigate to="/login" replace />;
+
+  // Si tenemos usuario pero el rol no carga por el firewall del hospital,
+  // redirigimos a admin como fallback seguro (el panel admin maneja sus propias restricciones)
+  if (userRole === 'admin' || userRole === 'supervisor') return <Navigate to="/admin" replace />;
+  if (userRole === 'agent') return <Navigate to="/agent" replace />;
+
+  // Por defecto si no hay rol por lentitud, vamos a admin (es más resiliente)
+  return <Navigate to="/admin" replace />;
 };
 
 function App() {

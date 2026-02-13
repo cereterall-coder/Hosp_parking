@@ -1,7 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { auth, db } from "../firebase";
-import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { supabase } from "../supabase";
 
 const AuthContext = createContext();
 
@@ -15,32 +13,80 @@ export function AuthProvider({ children }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
-            setCurrentUser(user);
-            if (user) {
-                try {
-                    const docRef = doc(db, "users", user.uid);
-                    const docSnap = await getDoc(docRef);
-                    if (docSnap.exists()) {
-                        setUserRole(docSnap.data().role);
-                    } else {
-                        // Si el documento de usuario no existe, asumimos que no tiene rol asignado aún.
-                        // Podríamos manejar esto creando un registro por defecto o denegando acceso.
-                        console.warn("User document not found for:", user.uid);
-                        setUserRole(null);
-                    }
-                } catch (error) {
-                    console.error("Error fetching user role:", error);
-                    setUserRole(null);
-                }
-            } else {
-                setUserRole(null);
+        // 0. Cargar rol desde cache si existe (para redes lentas del hospital)
+        const cachedRole = localStorage.getItem('user_role');
+        if (cachedRole) setUserRole(cachedRole);
+
+        // 1. Timeout de seguridad (Si en 15s no responde Supabase, quitamos el loading)
+        const safetyTimeout = setTimeout(() => {
+            if (loading) {
+                console.warn("Auth: Safety timeout reached. Forcing loading to false.");
+                setLoading(false);
             }
+        }, 15000);
+
+        // 2. Obtener sesión inicial
+        const getSession = async () => {
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session) {
+                    setCurrentUser(session.user);
+                    await fetchUserRole(session.user.id);
+                }
+            } catch (error) {
+                console.error("Auth initialization error:", error);
+            } finally {
+                clearTimeout(safetyTimeout);
+                setLoading(false);
+            }
+        };
+
+        getSession();
+
+        // 3. Escuchar cambios en la autenticación
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            if (session) {
+                setCurrentUser(session.user);
+                await fetchUserRole(session.user.id);
+            } else {
+                setCurrentUser(null);
+                setUserRole(null);
+                localStorage.removeItem('user_role');
+            }
+            clearTimeout(safetyTimeout);
             setLoading(false);
         });
 
-        return unsubscribe;
+        return () => {
+            clearTimeout(safetyTimeout);
+            subscription.unsubscribe();
+        };
     }, []);
+
+    const fetchUserRole = async (userId) => {
+        try {
+            // Ponemos un timeout de 3s para obtener el rol, si no, asumimos nulo temporalmente
+            const rolePromise = supabase
+                .from('users')
+                .select('role')
+                .eq('id', userId)
+                .single();
+
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("Timeout rol")), 10000)
+            );
+
+            const { data, error } = await Promise.race([rolePromise, timeoutPromise]);
+
+            if (data) {
+                console.log("Rol obtenido:", data.role);
+                setUserRole(data.role);
+                localStorage.setItem('user_role', data.role);
+            }
+        } catch (error) {
+            console.warn("No se pudo obtener el rol a tiempo, reintentando en segundo plano...");
+        }
+    };
 
     const value = {
         currentUser,
@@ -50,7 +96,7 @@ export function AuthProvider({ children }) {
 
     return (
         <AuthContext.Provider value={value}>
-            {!loading && children}
+            {children}
         </AuthContext.Provider>
     );
 }
