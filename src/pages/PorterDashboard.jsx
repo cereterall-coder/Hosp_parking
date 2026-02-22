@@ -497,23 +497,38 @@ function ExitView({ parkingItem, onSuccess, onSwitchToEntry }) {
     const processExit = async () => {
         setLoading(true);
         try {
-            // El error 400 ocurre porque estamos enviando el "id" de active_parking 
-            // a la tabla history, lo cual causa conflicto si history ya tiene un id autogenerado.
-            const { id, ...historyData } = parkingItem;
-
-            const { error: histError } = await supabase.from('history').insert({
-                ...historyData,
+            // Construimos el objeto del historial de forma explícita 
+            // para evitar enviar campos automáticos (como id o created_at) 
+            // que causarían un error 400 en la tabla history.
+            const historyEntry = {
+                plate: parkingItem.plate,
+                driver_name: parkingItem.driver_name,
+                agent_name: parkingItem.agent_name,
+                hospital: parkingItem.hospital,
+                gate: parkingItem.gate,
+                vehicle_type: parkingItem.vehicle_type,
+                type: parkingItem.type,
+                entry_time: parkingItem.entry_time,
                 exit_time: new Date().toISOString(),
                 status: 'completed'
-            });
+            };
+
+            const { error: histError } = await supabase.from('history').insert(historyEntry);
             if (histError) throw histError;
 
-            const { error: delError } = await supabase.from('active_parking').delete().eq('id', parkingItem.id);
+            const { error: delError } = await supabase
+                .from('active_parking')
+                .delete()
+                .eq('id', parkingItem.id);
+
             if (delError) throw delError;
 
             setSuccessView(true);
             setTimeout(onSuccess, 2000);
-        } catch (err) { alert('Error al procesar salida'); }
+        } catch (err) {
+            console.error("Error completo en salida:", err);
+            alert('Error al procesar salida: ' + (err.message || 'Verifique consola'));
+        }
         setLoading(false);
     };
 
