@@ -11,4 +11,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
     console.log("✅ Supabase initialized for URL:", supabaseUrl);
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    realtime: {
+        params: {
+            eventsPerSecond: 10
+        },
+        // Intentar reconectar automáticamente si el WebSocket se cierra
+        config: {
+            reconnectAfterMs: (parseInt) => [1000, 2000, 5000, 10000][parseInt] || 10000,
+        }
+    }
+});
