@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { Camera, LogOut, Search, CheckCircle, AlertCircle, Car, Bike, ArrowLeft, AlertTriangle, ArrowRightLeft, LayoutDashboard, Clock } from 'lucide-react';
 import Tesseract from 'tesseract.js';
 
 export default function PorterDashboard() {
@@ -53,6 +54,41 @@ export default function PorterDashboard() {
 
     return (
         <div style={{ minHeight: '100vh', background: '#F8FAFC' }}>
+            {/* Header persistente para Portero con Logout rápido */}
+            <div style={{
+                background: 'white',
+                padding: '0.75rem 1rem',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                borderBottom: '1px solid #E2E8F0',
+                position: 'sticky',
+                top: 0,
+                zIndex: 50
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Car size={20} color="#2563EB" />
+                    <span style={{ fontWeight: 800, color: '#1E293B', fontSize: '0.9rem' }}>HOSP-PARKING</span>
+                </div>
+                <button
+                    onClick={handleLogout}
+                    style={{
+                        background: '#FEF2F2',
+                        color: '#EF4444',
+                        border: '1px solid #FECACA',
+                        padding: '0.4rem 0.8rem',
+                        borderRadius: '0.5rem',
+                        fontSize: '0.8rem',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.4rem'
+                    }}
+                >
+                    <LogOut size={14} /> SALIR
+                </button>
+            </div>
+
             {view === 'menu' ? (
                 <AgentDashboardView
                     currentUser={currentUser}

@@ -118,9 +118,18 @@ export default function AdminDashboard() {
                         >
                             <Clock size={20} />
                         </button>
-                        <button onClick={toggleMenu} style={{ background: 'none', border: 'none', color: 'white' }}>
-                            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-                        </button>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <button
+                                onClick={logout}
+                                className="btn-icon"
+                                style={{ color: '#EF4444', background: '#FEF2F2', border: '1px solid #FECACA', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            >
+                                <LogOut size={18} />
+                            </button>
+                            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="btn-icon" style={{ background: 'none', border: 'none', color: 'white' }}>
+                                {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
