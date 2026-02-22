@@ -120,11 +120,27 @@ export default function AdminDashboard() {
                         </button>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                             <button
-                                onClick={logout}
+                                onClick={() => {
+                                    console.log("Admin Mobile Logout Clicked");
+                                    logout();
+                                }}
                                 className="btn-icon"
-                                style={{ color: '#EF4444', background: '#FEF2F2', border: '1px solid #FECACA', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                style={{
+                                    color: '#EF4444',
+                                    background: '#FEF2F2',
+                                    border: '1px solid #FECACA',
+                                    width: '42px',
+                                    height: '42px',
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    WebkitTapHighlightColor: 'transparent',
+                                    touchAction: 'manipulation'
+                                }}
                             >
-                                <LogOut size={18} />
+                                <LogOut size={20} />
                             </button>
                             <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="btn-icon" style={{ background: 'none', border: 'none', color: 'white' }}>
                                 {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -222,16 +238,20 @@ export default function AdminDashboard() {
                                 </div>
                             </div>
                             <button
-                                onClick={() => supabase.auth.signOut()}
+                                onClick={() => {
+                                    console.log("Admin Sidebar Logout Clicked");
+                                    logout();
+                                }}
                                 className="btn-icon"
                                 style={{
                                     color: '#EF4444', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #EF4444',
-                                    width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    cursor: 'pointer', transition: 'all 0.2s', flexShrink: 0
+                                    width: '44px', height: '44px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    cursor: 'pointer', flexShrink: 0,
+                                    WebkitTapHighlightColor: 'transparent'
                                 }}
                                 title="Cerrar Sesión"
                             >
-                                <LogOut size={20} />
+                                <LogOut size={22} />
                             </button>
                         </div>
                     )}

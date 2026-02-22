@@ -14,12 +14,18 @@ export function AuthProvider({ children }) {
     const [isDuplicate, setIsDuplicate] = useState(false);
     const [sessionId] = useState(Math.random().toString(36).substring(2, 15));
 
-    // Define the robust logout function
+    // Definimos una función de salida robusta y rápida
     const logout = async () => {
-        setIsDuplicate(false);
-        localStorage.removeItem('user_role');
-        await supabase.auth.signOut();
-        window.location.href = '/login';
+        try {
+            setIsDuplicate(false);
+            localStorage.removeItem('user_role');
+            // Disparamos el signOut pero no bloqueamos la UI esperando la red
+            supabase.auth.signOut().catch(console.error);
+            // Forzamos redirección inmediata
+            window.location.href = '/login';
+        } catch (e) {
+            window.location.href = '/login';
+        }
     };
 
     useEffect(() => {

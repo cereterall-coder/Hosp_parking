@@ -71,21 +71,28 @@ export default function PorterDashboard() {
                     <span style={{ fontWeight: 800, color: '#1E293B', fontSize: '0.9rem' }}>HOSP-PARKING</span>
                 </div>
                 <button
-                    onClick={handleLogout}
+                    onClick={() => {
+                        console.log("Logout presionado");
+                        logout();
+                    }}
                     style={{
-                        background: '#FEF2F2',
-                        color: '#EF4444',
-                        border: '1px solid #FECACA',
-                        padding: '0.4rem 0.8rem',
+                        background: '#EF4444',
+                        color: 'white',
+                        border: 'none',
+                        padding: '0.5rem 1rem',
                         borderRadius: '0.5rem',
-                        fontSize: '0.8rem',
-                        fontWeight: 700,
+                        fontSize: '0.85rem',
+                        fontWeight: 800,
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.4rem'
+                        gap: '0.4rem',
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)',
+                        userSelect: 'none',
+                        WebkitTapHighlightColor: 'transparent'
                     }}
                 >
-                    <LogOut size={14} /> SALIR
+                    <LogOut size={16} /> SALIR
                 </button>
             </div>
 
@@ -157,13 +164,6 @@ function AgentDashboardView({ currentUser, onStart, onLogout, onSwitchToStatus }
                     </div>
                 </div>
 
-                <button
-                    onClick={onLogout}
-                    className="btn btn-outline"
-                    style={{ marginTop: '2rem', color: '#EF4444', borderColor: '#FECACA' }}
-                >
-                    <LogOut size={18} /> Cerrar Sesión
-                </button>
             </div>
         </div>
     );
