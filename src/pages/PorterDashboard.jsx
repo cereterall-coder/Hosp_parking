@@ -497,8 +497,12 @@ function ExitView({ parkingItem, onSuccess, onSwitchToEntry }) {
     const processExit = async () => {
         setLoading(true);
         try {
+            // El error 400 ocurre porque estamos enviando el "id" de active_parking 
+            // a la tabla history, lo cual causa conflicto si history ya tiene un id autogenerado.
+            const { id, ...historyData } = parkingItem;
+
             const { error: histError } = await supabase.from('history').insert({
-                ...parkingItem,
+                ...historyData,
                 exit_time: new Date().toISOString(),
                 status: 'completed'
             });
