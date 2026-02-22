@@ -186,7 +186,7 @@ export default function AdminDashboard() {
                 </nav>
 
                 <div style={{ paddingBottom: isMobile ? '2rem' : 0 }}>
-                    {isMobile && currentUser && (
+                    {isMobile && authUser && (
                         <div style={{
                             borderTop: '1px solid #1E293B',
                             paddingTop: '1rem',
@@ -202,14 +202,14 @@ export default function AdminDashboard() {
                                 fontWeight: 'bold', fontSize: '1.1rem',
                                 flexShrink: 0
                             }}>
-                                {(currentUser.full_name || currentUser.username || "U")[0].toUpperCase()}
+                                {(currentUser?.full_name || currentUser?.username || authUser?.email || "U")[0].toUpperCase()}
                             </div>
                             <div style={{ flex: 1, overflow: 'hidden' }}>
                                 <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    {currentUser.full_name || currentUser.username}
+                                    {currentUser?.full_name || currentUser?.username || authUser?.email?.split('@')[0]}
                                 </div>
                                 <div style={{ fontSize: '0.75rem', color: '#94A3B8', textTransform: 'capitalize' }}>
-                                    {currentUser.role || userRole}
+                                    {currentUser?.role || userRole || 'Usuario'}
                                 </div>
                             </div>
                             <button
@@ -249,11 +249,11 @@ export default function AdminDashboard() {
                                 {activeTab === 'visual_map' && 'Mapa en Tiempo Real'}
                             </h2>
                         </div>
-                        {!isMobile && currentUser && (
+                        {!isMobile && authUser && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                 <div style={{ textAlign: 'right', lineHeight: '1.2' }}>
-                                    <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#1E293B' }}>{currentUser.full_name || currentUser.username}</div>
-                                    <div style={{ fontSize: '0.75rem', color: '#64748B', textTransform: 'capitalize' }}>{currentUser.role || userRole}</div>
+                                    <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#1E293B' }}>{currentUser?.full_name || currentUser?.username || authUser?.email?.split('@')[0]}</div>
+                                    <div style={{ fontSize: '0.75rem', color: '#64748B', textTransform: 'capitalize' }}>{currentUser?.role || userRole || 'Usuario'}</div>
                                 </div>
                                 <div style={{
                                     width: '36px', height: '36px', borderRadius: '50%',
@@ -261,7 +261,7 @@ export default function AdminDashboard() {
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     fontWeight: 'bold', fontSize: '1rem'
                                 }}>
-                                    {(currentUser.full_name || currentUser.username || "U")[0].toUpperCase()}
+                                    {(currentUser?.full_name || currentUser?.username || authUser?.email || "U")[0].toUpperCase()}
                                 </div>
                                 <button
                                     onClick={() => supabase.auth.signOut()}
