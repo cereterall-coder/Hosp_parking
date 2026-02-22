@@ -555,19 +555,40 @@ function DashboardView({ isMobile, onAction }) {
                                                 'Forzar Salida',
                                                 `¿Estás seguro de forzar la salida del vehículo ${v.plate}? Esta acción quedará registrada como una incidencia administrativa.`,
                                                 async () => {
+                                                    const historyEntry = {
+                                                        plate: v.plate,
+                                                        driver_name: v.driver_name,
+                                                        agent_name: v.agent_name,
+                                                        hospital: v.hospital,
+                                                        gate: v.gate,
+                                                        vehicle_type: v.vehicle_type,
+                                                        type: v.type,
+                                                        entry_time: v.entry_time,
+                                                        exit_time: new Date().toISOString(),
+                                                        status: 'completed_forced_admin',
+                                                        notes: 'Salida Forzada por Admin'
+                                                    };
                                                     try {
-                                                        const { error: histError } = await supabase.from('history').insert({
-                                                            ...v,
+                                                        const historyEntry = {
+                                                            plate: v.plate,
+                                                            driver_name: v.driver_name,
+                                                            agent_name: v.agent_name,
+                                                            hospital: v.hospital,
+                                                            gate: v.gate,
+                                                            vehicle_type: v.vehicle_type,
+                                                            type: v.type,
+                                                            entry_time: v.entry_time,
                                                             exit_time: new Date().toISOString(),
                                                             status: 'completed_forced_admin',
                                                             notes: 'Salida Forzada por Admin'
-                                                        });
+                                                        };
+                                                        const { error: histError } = await supabase.from('history').insert(historyEntry);
                                                         if (histError) throw histError;
 
                                                         const { error: delError } = await supabase.from('active_parking').delete().eq('id', v.id);
                                                         if (delError) throw delError;
-                                                        fetchVehicles(); // Forzamos recarga
-                                                    } catch (e) { console.error(e); alert("Error"); }
+                                                        fetchVehicles();
+                                                    } catch (e) { console.error(e); alert("Error al forzar salida: " + e.message); }
                                                 },
                                                 'danger'
                                             )}
@@ -582,7 +603,7 @@ function DashboardView({ isMobile, onAction }) {
                     </table>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
 
@@ -653,18 +674,29 @@ function VisualMapView({ isMobile, onAction }) {
                                     `¿Deseas registrar la salida forzada (Admin) del vehículo ${v.plate}?`,
                                     async () => {
                                         try {
-                                            const { error: histError } = await supabase.from('history').insert({
-                                                ...v,
+                                            const historyEntry = {
+                                                plate: v.plate,
+                                                driver_name: v.driver_name,
+                                                agent_name: v.agent_name,
+                                                hospital: v.hospital,
+                                                gate: v.gate,
+                                                vehicle_type: v.vehicle_type,
+                                                type: v.type,
+                                                entry_time: v.entry_time,
                                                 exit_time: new Date().toISOString(),
                                                 status: 'completed_forced_admin',
                                                 notes: 'Salida Forzada por Admin'
-                                            });
+                                            };
+                                            const { error: histError } = await supabase.from('history').insert(historyEntry);
                                             if (histError) throw histError;
 
                                             const { error: delError = null } = await supabase.from('active_parking').delete().eq('id', v.id);
                                             if (delError) throw delError;
                                             fetchVehicles(); // Forzamos recarga
-                                        } catch (e) { console.error(e); alert("Error"); }
+                                        } catch (e) {
+                                            console.error("Error al forzar salida:", e);
+                                            alert("Error al forzar salida: " + (e.message || "Verifique consola"));
+                                        }
                                     },
                                     'danger'
                                 );
