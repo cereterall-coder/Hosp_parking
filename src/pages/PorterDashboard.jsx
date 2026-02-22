@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { Camera, LogOut, Search, CheckCircle, AlertCircle, Car, Bike, ArrowLeft, AlertTriangle, ArrowRightLeft, LayoutDashboard, Clock } from 'lucide-react';
+import { Camera, LogOut, Search, CheckCircle, AlertCircle, Car, Bike, ArrowLeft, AlertTriangle, ArrowRightLeft, LayoutDashboard, Clock, Mic } from 'lucide-react';
 import Tesseract from 'tesseract.js';
 
 export default function PorterDashboard() {
@@ -247,6 +247,36 @@ function UnifiedOperationFlow({ currentUser, onBack }) {
     const [ocrLoading, setOcrLoading] = useState(false);
     const [message, setMessage] = useState(null);
     const [parkingItem, setParkingItem] = useState(null);
+    const [isListening, setIsListening] = useState(false);
+
+    const startVoiceRecognition = () => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert("Tu navegador no soporta reconocimiento de voz. Intenta con Chrome o Edge.");
+            return;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'es-ES';
+        recognition.continuous = false;
+        recognition.interimResults = false;
+
+        recognition.onstart = () => setIsListening(true);
+        recognition.onend = () => setIsListening(false);
+        recognition.onerror = () => setIsListening(false);
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            const cleanPlate = transcript.toUpperCase().replace(/\s/g, '').replace(/[^A-Za-z0-9]/g, '');
+            if (cleanPlate) {
+                setPlate(cleanPlate);
+                // Opcional: auto-buscar después de un retraso
+                setTimeout(() => checkPlateAction(cleanPlate), 500);
+            }
+        };
+
+        recognition.start();
+    };
 
     const handleOCR = async (e) => {
         const file = e.target.files[0];
@@ -328,16 +358,26 @@ function UnifiedOperationFlow({ currentUser, onBack }) {
                     <input
                         className="input"
                         value={plate}
-                        onChange={e => setPlate(e.target.value.toUpperCase())}
+                        onChange={e => setPlate(e.target.value.toUpperCase().replace(/\s/g, ''))}
                         placeholder="ABC-123"
                         style={{ fontSize: '2rem', textAlign: 'center', height: '80px', fontWeight: 900, letterSpacing: '2px' }}
                     />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px', gap: '1rem', marginTop: '1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 80px', gap: '1rem', marginTop: '1rem' }}>
                     <button className="btn btn-primary" onClick={() => checkPlateAction()} disabled={loading || !plate}>
                         {loading ? 'Buscando...' : 'CONTINUAR'}
                     </button>
+
+                    <button
+                        className={`btn ${isListening ? 'btn-danger' : 'btn-outline'}`}
+                        onClick={startVoiceRecognition}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontWeight: 'bold' }}
+                    >
+                        <Mic size={20} className={isListening ? 'pulse' : ''} />
+                        {isListening ? 'ESCUCHANDO...' : 'POR VOZ'}
+                    </button>
+
                     <div style={{ position: 'relative' }}>
                         <input type="file" accept="image/*" capture="environment" onChange={handleOCR} style={{ position: 'absolute', opacity: 0, width: '100%', height: '100%' }} />
                         <button className="btn btn-outline btn-icon" style={{ width: '100%', height: '100%' }}>
