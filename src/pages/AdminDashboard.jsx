@@ -44,7 +44,7 @@ class ErrorBoundary extends React.Component {
 }
 
 export default function AdminDashboard() {
-    const { currentUser: authUser, userRole } = useAuth();
+    const { currentUser: authUser, userRole, logout } = useAuth();
     const [activeTab, setActiveTab] = useState('dashboard');
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -264,7 +264,7 @@ export default function AdminDashboard() {
                                     {(currentUser?.full_name || currentUser?.username || authUser?.email || "U")[0].toUpperCase()}
                                 </div>
                                 <button
-                                    onClick={() => supabase.auth.signOut()}
+                                    onClick={logout}
                                     className="btn-icon"
                                     style={{
                                         color: '#EF4444', background: '#FEF2F2', border: '1px solid #FECACA',

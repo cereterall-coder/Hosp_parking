@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
-import { Camera, LogOut, Search, CheckCircle, AlertCircle, Car, Bike, ArrowLeft, AlertTriangle, ArrowRightLeft, LayoutDashboard, Clock } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import Tesseract from 'tesseract.js';
 
 export default function PorterDashboard() {
+    const { logout } = useAuth();
     const [view, setView] = useState('menu'); // 'menu', 'operation'
     const [currentUser, setCurrentUser] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -45,7 +46,7 @@ export default function PorterDashboard() {
     }, [currentUser?.id]);
 
     const handleLogout = async () => {
-        await supabase.auth.signOut();
+        await logout();
     };
 
     if (loading) return <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center' }}>Cargando...</div>;

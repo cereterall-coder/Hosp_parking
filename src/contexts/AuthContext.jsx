@@ -14,6 +14,14 @@ export function AuthProvider({ children }) {
     const [isDuplicate, setIsDuplicate] = useState(false);
     const [sessionId] = useState(Math.random().toString(36).substring(2, 15));
 
+    // Define the robust logout function
+    const logout = async () => {
+        setIsDuplicate(false);
+        localStorage.removeItem('user_role');
+        await supabase.auth.signOut();
+        window.location.href = '/login';
+    };
+
     useEffect(() => {
         // --- CONTROL DE PESTAÑAS DUPLICADAS (Mismo Navegador) ---
         const channel = new BroadcastChannel('cochera_session_control');
@@ -160,7 +168,7 @@ export function AuthProvider({ children }) {
         userRole,
         loading,
         isDuplicate,
-        logout: () => supabase.auth.signOut(),
+        logout, // Expose the robust logout function
         reconnect: () => {
             if (currentUser) syncSession(currentUser.id);
             setIsDuplicate(false);
@@ -204,7 +212,7 @@ export function AuthProvider({ children }) {
                         RETOMAR AQUÍ (Cerrar otras)
                     </button>
                     <button
-                        onClick={() => supabase.auth.signOut()}
+                        onClick={logout} // Use the exposed logout function
                         style={{
                             padding: '1rem',
                             background: 'transparent', color: '#EF4444', border: '2px solid #EF4444',
