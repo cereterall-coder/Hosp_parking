@@ -80,14 +80,16 @@ export function AuthProvider({ children }) {
 
         let channelSubscription = null;
 
-        // 3. Escuchar cambios en la autenticación
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             if (session) {
                 setCurrentUser(session.user);
-                await fetchUserRole(session.user.id);
+                // No bloqueamos el loading principal esperando el rol o la sesión
+                fetchUserRole(session.user.id);
                 if (event === 'SIGNED_IN') {
-                    await syncSession(session.user.id);
+                    syncSession(session.user.id);
                 }
+                clearTimeout(safetyTimeout);
+                setLoading(false);
             } else {
                 setCurrentUser(null);
                 setUserRole(null);
@@ -97,9 +99,9 @@ export function AuthProvider({ children }) {
                     supabase.removeChannel(channelSubscription);
                     channelSubscription = null;
                 }
+                clearTimeout(safetyTimeout);
+                setLoading(false);
             }
-            clearTimeout(safetyTimeout);
-            setLoading(false);
         });
 
         const syncSession = async (userId) => {

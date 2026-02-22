@@ -23,63 +23,46 @@ export default function Login() {
         }
 
         try {
-            console.log("Intentando login para:", loginEmail);
+            console.log("Iniciando sesión para:", loginEmail);
 
-            // Eliminamos limpiezas agresivas que pueden colgar el cliente de Supabase
-            // durante la fase de autenticación.
-
-            const loginPromise = supabase.auth.signInWithPassword({
+            const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
                 email: loginEmail,
                 password: password,
             });
 
-            // Aumentamos a 30 segundos porque algunas redes son lentas
-            const timeoutPromise = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error("La respuesta tarda demasiado. Reintenta en unos segundos.")), 30000)
-            );
-
-            const { data: authData, error: authError } = await Promise.race([loginPromise, timeoutPromise]);
-
-            if (authError) {
-                console.error("Error de Autenticación:", authError);
-                throw authError;
-            }
+            if (authError) throw authError;
 
             if (authData?.user) {
-                console.log("Login exitoso. Validando datos...");
-                const { data: userData } = await supabase
-                    .from('users')
-                    .select('*')
-                    .eq('id', authData.user.id);
+                // Validamos si la cuenta está deshabilitada (opcional, pero no bloqueante)
+                try {
+                    const { data: userData } = await supabase
+                        .from('users')
+                        .select('is_disabled')
+                        .eq('id', authData.user.id)
+                        .single();
 
-                if (userData?.[0]?.is_disabled) {
-                    await supabase.auth.signOut();
-                    setError('CUENTA INHABILITADA');
-                    setLoading(false);
-                    return;
+                    if (userData?.is_disabled) {
+                        await supabase.auth.signOut();
+                        setError('CUENTA INHABILITADA');
+                        setLoading(false);
+                        return;
+                    }
+                } catch (e) {
+                    console.warn("Validación de cuenta deshabilitada falló, continuando...");
                 }
-            }
 
-            console.log("Entrando...");
-            setLoading(false); // Liberamos el botón antes de navegar
-            navigate('/', { replace: true });
+                console.log("Acceso concedido, redirigiendo...");
+                // Pequeña pausa para asegurar que el estado de AuthContext se sincronice
+                setTimeout(() => {
+                    navigate('/', { replace: true });
+                }, 500);
+            }
         } catch (err) {
-            console.error("Fallo detallado:", err);
-
-            // Verificamos si realmente se conectó de fondo
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-                navigate('/');
-                return;
-            }
-
-            if (err.message.includes('Email not confirmed')) {
-                setError('USUARIO NO CONFIRMADO: Actívalo en el panel de Supabase.');
-            } else {
-                setError(err.message || 'Error de acceso');
-            }
+            console.error("Error en login:", err);
+            setError(err.message === 'Invalid login credentials' ? 'Usuario o contraseña incorrectos' : err.message);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     return (
