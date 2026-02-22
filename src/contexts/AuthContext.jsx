@@ -11,8 +11,28 @@ export function AuthProvider({ children }) {
     const [currentUser, setCurrentUser] = useState(null);
     const [userRole, setUserRole] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isDuplicate, setIsDuplicate] = useState(false);
+    const [sessionId] = useState(Math.random().toString(36).substring(2, 15));
 
     useEffect(() => {
+        // --- CONTROL DE PESTAÑAS DUPLICADAS (Mismo Navegador) ---
+        const channel = new BroadcastChannel('cochera_session_control');
+
+        // Notificamos a otras pestañas que hemos abierto una nueva
+        channel.postMessage({ type: 'NEW_INSTANCE_OPENED', id: sessionId });
+
+        channel.onmessage = (event) => {
+            if (event.data.type === 'NEW_INSTANCE_OPENED' && event.data.id !== sessionId) {
+                // Otra pestaña se abrió. Podemos decidir quién se queda.
+                // Opción A: Mandar un "sigo aquí" para que la nueva se cierre
+                channel.postMessage({ type: 'INSTANCE_ALREADY_EXISTS', targetId: event.data.id });
+            }
+            if (event.data.type === 'INSTANCE_ALREADY_EXISTS' && event.data.targetId === sessionId) {
+                // Esta pestaña es la duplicada
+                setIsDuplicate(true);
+            }
+        };
+
         // 0. Cargar rol desde cache si existe (para redes lentas del hospital)
         const cachedRole = localStorage.getItem('user_role');
         if (cachedRole) setUserRole(cachedRole);
@@ -32,6 +52,7 @@ export function AuthProvider({ children }) {
                 if (session) {
                     setCurrentUser(session.user);
                     await fetchUserRole(session.user.id);
+                    await syncSession(session.user.id);
                 }
             } catch (error) {
                 console.error("Auth initialization error:", error);
@@ -43,29 +64,74 @@ export function AuthProvider({ children }) {
 
         getSession();
 
+        let channelSubscription = null;
+
         // 3. Escuchar cambios en la autenticación
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             if (session) {
                 setCurrentUser(session.user);
                 await fetchUserRole(session.user.id);
+                if (event === 'SIGNED_IN') {
+                    await syncSession(session.user.id);
+                }
             } else {
                 setCurrentUser(null);
                 setUserRole(null);
                 localStorage.removeItem('user_role');
+                if (channelSubscription) {
+                    supabase.removeChannel(channelSubscription);
+                    channelSubscription = null;
+                }
             }
             clearTimeout(safetyTimeout);
             setLoading(false);
         });
 
+        // 4. Función para sincronizar sesión con DB
+        const syncSession = async (userId) => {
+            if (!userId) return;
+
+            // Intentamos actualizar el token de sesión en la DB
+            // NOTA: Requiere columna 'current_session_id' en tabla 'users'
+            try {
+                await supabase
+                    .from('users')
+                    .update({ current_session_id: sessionId })
+                    .eq('id', userId);
+
+                // Nos suscribimos a cambios en nuestro usuario para detectar si alguien más entra
+                if (channelSubscription) supabase.removeChannel(channelSubscription);
+
+                channelSubscription = supabase
+                    .channel(`user_session_${userId}`)
+                    .on('postgres_changes', {
+                        event: 'UPDATE',
+                        schema: 'public',
+                        table: 'users',
+                        filter: `id=eq.${userId}`
+                    }, (payload) => {
+                        if (payload.new.current_session_id && payload.new.current_session_id !== sessionId) {
+                            console.warn("Sesión duplicada detectada desde DB.");
+                            setIsDuplicate(true);
+                        }
+                    })
+                    .subscribe();
+
+            } catch (e) {
+                console.warn("No se pudo sincronizar sesión remota (posible falta de columna current_session_id):", e);
+            }
+        };
+
         return () => {
             clearTimeout(safetyTimeout);
             subscription.unsubscribe();
+            channel.close();
+            if (channelSubscription) supabase.removeChannel(channelSubscription);
         };
-    }, []);
+    }, [sessionId]);
 
     const fetchUserRole = async (userId) => {
         try {
-            // Ponemos un timeout de 3s para obtener el rol, si no, asumimos nulo temporalmente
             const rolePromise = supabase
                 .from('users')
                 .select('role')
@@ -91,8 +157,42 @@ export function AuthProvider({ children }) {
     const value = {
         currentUser,
         userRole,
-        loading
+        loading,
+        isDuplicate
     };
+
+    if (isDuplicate) {
+        return (
+            <div style={{
+                height: '100vh', display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
+                background: '#0F172A', color: 'white', textAlign: 'center', padding: '2rem'
+            }}>
+                <div style={{ background: '#EF4444', padding: '1.5rem', borderRadius: '50%', marginBottom: '1.5rem' }}>
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                        <line x1="12" y1="9" x2="12" y2="13" />
+                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
+                </div>
+                <h1 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Acceso Restringido</h1>
+                <p style={{ color: '#94A3B8', maxWidth: '400px', lineHeight: '1.6' }}>
+                    El sistema ya se encuentra abierto en otra pestaña o ventana de este navegador.
+                    Por seguridad, solo se permite una sesión activa a la vez.
+                </p>
+                <button
+                    onClick={() => window.location.reload()}
+                    style={{
+                        marginTop: '2rem', padding: '0.75rem 2rem',
+                        background: '#2563EB', color: 'white', border: 'none',
+                        borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600
+                    }}
+                >
+                    Reintentar en esta pestaña
+                </button>
+            </div>
+        );
+    }
 
     return (
         <AuthContext.Provider value={value}>
