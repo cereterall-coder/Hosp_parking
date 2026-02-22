@@ -432,8 +432,8 @@ function EntryForm({ plateProp, onSuccess, currentUser }) {
                 type: mode,
                 entry_time: new Date().toISOString(),
                 status: 'occupied',
-                hospital: currentUser?.hospital_name || 'Principal',
-                gate: currentUser?.gate_name || 'Principal',
+                hospital: currentUser?.hospital || 'Principal',
+                gate: currentUser?.gate || 'Principal',
                 agent_name: currentUser?.full_name || currentUser?.username || 'Agente',
                 driver_name: mode === 'personal' ? (foundPerson?.full_name || 'Personal') : driverName,
                 vehicle_type: mode === 'personal' ? (foundPerson?.vehicle_type || 'auto') : vehicleType
