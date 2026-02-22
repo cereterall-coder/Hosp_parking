@@ -102,19 +102,11 @@ export function AuthProvider({ children }) {
             setLoading(false);
         });
 
-        // 4. Función para sincronizar sesión con DB
         const syncSession = async (userId) => {
             if (!userId) return;
 
-            // Intentamos actualizar el token de sesión en la DB
-            // NOTA: Requiere columna 'current_session_id' en tabla 'users'
             try {
-                await supabase
-                    .from('users')
-                    .update({ current_session_id: sessionId })
-                    .eq('id', userId);
-
-                // Nos suscribimos a cambios en nuestro usuario para detectar si alguien más entra
+                // Primero nos suscribimos para no perder cambios durante el update
                 if (channelSubscription) supabase.removeChannel(channelSubscription);
 
                 channelSubscription = supabase
@@ -125,15 +117,22 @@ export function AuthProvider({ children }) {
                         table: 'users',
                         filter: `id=eq.${userId}`
                     }, (payload) => {
-                        if (payload.new.current_session_id && payload.new.current_session_id !== sessionId) {
-                            console.warn("Sesión duplicada detectada desde DB.");
+                        const newSessionId = payload.new.current_session_id;
+                        if (newSessionId && newSessionId !== sessionId) {
+                            console.warn("Sesión remota detectada:", newSessionId);
                             setIsDuplicate(true);
                         }
                     })
                     .subscribe();
 
+                // Intentamos actualizar nuestro ID de sesión en la DB
+                await supabase
+                    .from('users')
+                    .update({ current_session_id: sessionId })
+                    .eq('id', userId);
+
             } catch (e) {
-                console.warn("No se pudo sincronizar sesión remota (posible falta de columna current_session_id):", e);
+                console.warn("Sincronización de sesión limitada:", e);
             }
         };
 

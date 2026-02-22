@@ -23,12 +23,10 @@ export default function Login() {
         }
 
         try {
-            console.log("Limpieza rápida de sesión local...");
-            // Limpiamos localmente sin esperar al servidor
-            localStorage.clear();
-            supabase.auth.signOut(); // Lo lanzamos sin 'await' para que no bloquee
-
             console.log("Intentando login para:", loginEmail);
+
+            // Eliminamos limpiezas agresivas que pueden colgar el cliente de Supabase
+            // durante la fase de autenticación.
 
             const loginPromise = supabase.auth.signInWithPassword({
                 email: loginEmail,
@@ -63,7 +61,8 @@ export default function Login() {
             }
 
             console.log("Entrando...");
-            navigate('/');
+            setLoading(false); // Liberamos el botón antes de navegar
+            navigate('/', { replace: true });
         } catch (err) {
             console.error("Fallo detallado:", err);
 
