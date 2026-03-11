@@ -7,7 +7,7 @@ import {
     Search, Filter, ChevronRight, Menu, Map as MapIcon,
     Shield, Briefcase, UserPlus, Phone, ShieldCheck, UserCheck,
     Key, MoreVertical, Layout, CreditCard, Camera, Info,
-    AlertCircle, CheckCircle2, MoreHorizontal, Building2, MapPin, CheckCircle, Grid, AlertTriangle
+    AlertCircle, CheckCircle2, MoreHorizontal, Building2, MapPin, CheckCircle, Grid, AlertTriangle, UploadCloud, Lock
 } from 'lucide-react';
 import { createSystemUser } from '../utils/adminAuth';
 import { useAuth } from '../contexts/AuthContext';
