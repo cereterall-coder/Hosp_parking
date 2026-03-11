@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { Camera, LogOut, Search, CheckCircle, AlertCircle, Car, Bike, ArrowLeft, AlertTriangle, ArrowRightLeft, LayoutDashboard, Clock, Mic } from 'lucide-react';
+import { Camera, LogOut, Search, CheckCircle, AlertCircle, Car, Bike, ArrowLeft, AlertTriangle, ArrowRightLeft, LayoutDashboard, Clock, Mic, Truck } from 'lucide-react';
 import Tesseract from 'tesseract.js';
 
 export default function PorterDashboard() {
@@ -169,6 +169,24 @@ function AgentDashboardView({ currentUser, onStart, onLogout, onSwitchToStatus }
     );
 }
 
+const getVehicleConfig = (type) => {
+    const configs = {
+        auto: { label: 'Auto', icon: <Car size={18} />, color: '#2563EB', bg: '#EFF6FF' },
+        moto: { label: 'Moto', icon: <Bike size={18} />, color: '#9333EA', bg: '#F3E8FF' },
+        ambulancia: { label: 'Ambulancia', icon: <Truck size={18} />, color: '#EF4444', bg: '#FEF2F2' },
+        camion: { label: 'Camión', icon: <Truck size={18} />, color: '#F59E0B', bg: '#FFFBEB' },
+        mototaxi: { label: 'Mototaxi', icon: <Bike size={18} />, color: '#EAB308', bg: '#FEFCE8' },
+        combi: { label: 'Combi', icon: <Truck size={18} />, color: '#06B6D4', bg: '#ECFEFF' },
+        furgoneta: { label: 'Furgoneta', icon: <Truck size={18} />, color: '#64748B', bg: '#F8FAFC' },
+        bicicleta: { label: 'Bicicleta', icon: <Bike size={18} />, color: '#10B981', bg: '#ECFDF5' },
+        scooter: { label: 'Scooter', icon: <Bike size={18} />, color: '#14B8A6', bg: '#F0FDFA' },
+        cuatrimoto: { label: 'Cuatrimoto', icon: <Bike size={18} />, color: '#78350F', bg: '#FFF7ED' },
+        camioneta: { label: 'Camioneta', icon: <Car size={18} />, color: '#1D4ED8', bg: '#EFF6FF' },
+        suv: { label: 'SUV', icon: <Car size={18} />, color: '#1E3A8A', bg: '#EFF6FF' }
+    };
+    return configs[type] || configs.auto;
+};
+
 function AgentStatusView({ currentUser, onBack }) {
     const [vehicles, setVehicles] = useState([]);
 
@@ -214,9 +232,19 @@ function AgentStatusView({ currentUser, onBack }) {
 
                     return (
                         <div key={v.id} className="card" style={{ padding: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div>
-                                <div style={{ fontWeight: 700, fontSize: '1.1rem', fontFamily: 'monospace', color: '#1E293B' }}>{v.plate}</div>
-                                <div style={{ fontSize: '0.8rem', color: '#64748B' }}>{v.driver_name || 'Conductor General'}</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <div style={{
+                                    background: getVehicleConfig(v.vehicle_type).bg,
+                                    color: getVehicleConfig(v.vehicle_type).color,
+                                    width: '36px', height: '36px', borderRadius: '8px',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                }}>
+                                    {getVehicleConfig(v.vehicle_type).icon}
+                                </div>
+                                <div>
+                                    <div style={{ fontWeight: 700, fontSize: '1.1rem', fontFamily: 'monospace', color: '#1E293B' }}>{v.plate}</div>
+                                    <div style={{ fontSize: '0.8rem', color: '#64748B' }}>{v.driver_name || 'Conductor General'}</div>
+                                </div>
                             </div>
                             <div style={{ textAlign: 'right' }}>
                                 <div className="badge badge-warning" style={{ marginBottom: '0.25rem', display: 'inline-block' }}>
@@ -477,9 +505,28 @@ function EntryForm({ plateProp, onSuccess, currentUser }) {
                     )}
                 </div>
             ) : (
-                <div className="input-group">
-                    <label className="label">Conductor</label>
-                    <input className="input" value={driverName} onChange={e => setDriverName(e.target.value)} placeholder="Nombre..." />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+                    <div className="input-group" style={{ marginBottom: 0 }}>
+                        <label className="label">Conductor</label>
+                        <input className="input" value={driverName} onChange={e => setDriverName(e.target.value)} placeholder="Nombre..." />
+                    </div>
+                    <div className="input-group" style={{ marginBottom: 0 }}>
+                        <label className="label">Tipo de Vehículo</label>
+                        <select className="input" value={vehicleType} onChange={e => setVehicleType(e.target.value)}>
+                            <option value="auto">🚗 Auto</option>
+                            <option value="camioneta">🚙 Camioneta</option>
+                            <option value="suv">SUV</option>
+                            <option value="moto">🏍️ Moto</option>
+                            <option value="mototaxi">🛺 Mototaxi</option>
+                            <option value="ambulancia">🚑 Ambulancia</option>
+                            <option value="camion">🚚 Camión</option>
+                            <option value="combi">🚐 Combi</option>
+                            <option value="furgoneta">📦 Furgoneta</option>
+                            <option value="bicicleta">🚲 Bicicleta</option>
+                            <option value="scooter">🛴 Scooter</option>
+                            <option value="cuatrimoto">🚜 Cuatrimoto</option>
+                        </select>
+                    </div>
                 </div>
             )}
 

@@ -7,7 +7,8 @@ import {
     Search, Filter, ChevronRight, Menu, Map as MapIcon,
     Shield, Briefcase, UserPlus, Phone, ShieldCheck, UserCheck,
     Key, MoreVertical, Layout, CreditCard, Camera, Info,
-    AlertCircle, CheckCircle2, MoreHorizontal, Building2, MapPin, CheckCircle, Grid, AlertTriangle, UploadCloud, Lock
+    AlertCircle, CheckCircle2, MoreHorizontal, Building2, MapPin, CheckCircle, Grid, AlertTriangle, UploadCloud, Lock,
+    Truck
 } from 'lucide-react';
 import { createSystemUser } from '../utils/adminAuth';
 import { useAuth } from '../contexts/AuthContext';
@@ -448,17 +449,18 @@ function DashboardView({ isMobile, onAction }) {
 
     const autos = vehicles.filter(v => v.vehicle_type === 'auto').length;
     const motos = vehicles.filter(v => v.vehicle_type === 'moto').length;
-    const libres = vehicles.filter(v => v.type === 'libre').length;
+    const otros = vehicles.filter(v => !['auto', 'moto'].includes(v.vehicle_type)).length;
 
     return (
         <div>
             <div className="grid-dashboard" style={{
-                gridTemplateColumns: isMobile ? '1fr ' : 'repeat(auto-fit, minmax(240px, 1fr))',
+                gridTemplateColumns: isMobile ? '1fr ' : 'repeat(auto-fit, minmax(200px, 1fr))',
                 gap: '0.5rem', marginBottom: '0.5rem'
             }}>
                 <KPICard title="Total Vehículos" value={vehicles.length} icon={<Car size={28} />} color="blue" trend="+12% vs ayer" />
                 <KPICard title="Autos" value={autos} icon={<Car size={28} />} color="indigo" />
                 <KPICard title="Motos" value={motos} icon={<Bike size={28} />} color="purple" />
+                <KPICard title="Otros" value={otros} icon={<Truck size={28} />} color="orange" />
             </div>
 
             {/* Top 5 Longest Stays - Compact */}
@@ -607,6 +609,24 @@ function DashboardView({ isMobile, onAction }) {
     );
 }
 
+const getVehicleConfig = (type) => {
+    const configs = {
+        auto: { label: 'Auto', icon: <Car size={32} />, color: '#2563EB', bg: '#EFF6FF' },
+        moto: { label: 'Moto', icon: <Bike size={32} />, color: '#9333EA', bg: '#F3E8FF' },
+        ambulancia: { label: 'Ambulancia', icon: <Truck size={32} />, color: '#EF4444', bg: '#FEF2F2' },
+        camion: { label: 'Camión', icon: <Truck size={32} />, color: '#F59E0B', bg: '#FFFBEB' },
+        mototaxi: { label: 'Mototaxi', icon: <Bike size={32} />, color: '#EAB308', bg: '#FEFCE8' },
+        combi: { label: 'Combi', icon: <Truck size={32} />, color: '#06B6D4', bg: '#ECFEFF' },
+        furgoneta: { label: 'Furgoneta', icon: <Truck size={32} />, color: '#64748B', bg: '#F8FAFC' },
+        bicicleta: { label: 'Bicicleta', icon: <Bike size={32} />, color: '#10B981', bg: '#ECFDF5' },
+        scooter: { label: 'Scooter', icon: <Bike size={32} />, color: '#14B8A6', bg: '#F0FDFA' },
+        cuatrimoto: { label: 'Cuatrimoto', icon: <Bike size={32} />, color: '#78350F', bg: '#FFF7ED' },
+        camioneta: { label: 'Camioneta', icon: <Car size={32} />, color: '#1D4ED8', bg: '#EFF6FF' },
+        suv: { label: 'SUV', icon: <Car size={32} />, color: '#1E3A8A', bg: '#EFF6FF' }
+    };
+    return configs[type] || configs.auto;
+};
+
 function VisualMapView({ isMobile, onAction }) {
     const [vehicles, setVehicles] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -655,101 +675,104 @@ function VisualMapView({ isMobile, onAction }) {
                 gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(200px, 1fr))',
                 gap: '1.5rem'
             }}>
-                {vehicles.map(v => (
-                    <div key={v.id} className="card visual-card" style={{
-                        padding: '0',
-                        height: '180px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        borderTop: `4px solid ${v.vehicle_type === 'moto' ? '#9333EA' : '#2563EB'}`,
-                        position: 'relative'
-                    }}>
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onAction(
-                                    'Forzar Salida',
-                                    `¿Deseas registrar la salida forzada (Admin) del vehículo ${v.plate}?`,
-                                    async () => {
-                                        try {
-                                            const historyEntry = {
-                                                plate: v.plate,
-                                                driver_name: v.driver_name,
-                                                agent_name: v.agent_name,
-                                                hospital: v.hospital,
-                                                gate: v.gate,
-                                                vehicle_type: v.vehicle_type,
-                                                type: v.type,
-                                                entry_time: v.entry_time,
-                                                exit_time: new Date().toISOString(),
-                                                status: 'completed_forced_admin',
-                                                notes: 'Salida Forzada por Admin'
-                                            };
-                                            const { error: histError } = await supabase.from('history').insert(historyEntry);
-                                            if (histError) throw histError;
-
-                                            const { error: delError = null } = await supabase.from('active_parking').delete().eq('id', v.id);
-                                            if (delError) throw delError;
-                                            fetchVehicles(); // Forzamos recarga
-                                        } catch (e) {
-                                            console.error("Error al forzar salida:", e);
-                                            alert("Error al forzar salida: " + (e.message || "Verifique consola"));
-                                        }
-                                    },
-                                    'danger'
-                                );
-                            }}
-                            style={{
-                                position: 'absolute', top: '0.5rem', right: '0.5rem',
-                                background: '#FEF2F2', border: '1px solid #FECACA',
-                                color: '#EF4444', borderRadius: '50%',
-                                width: '32px', height: '32px',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                cursor: 'pointer', zIndex: 10
-                            }}
-                            title="Forzar Salida"
-                        >
-                            <LogOut size={16} />
-                        </button>
-
-                        <div style={{
-                            background: v.vehicle_type === 'moto' ? '#F3E8FF' : '#EFF6FF',
-                            padding: '1.5rem',
-                            borderRadius: '50%',
-                            marginBottom: '1rem',
-                            color: v.vehicle_type === 'moto' ? '#9333EA' : '#2563EB'
+                {vehicles.map(v => {
+                    const config = getVehicleConfig(v.vehicle_type);
+                    return (
+                        <div key={v.id} className="card visual-card" style={{
+                            padding: '0',
+                            height: '180px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderTop: `4px solid ${config.color}`,
+                            position: 'relative'
                         }}>
-                            {v.vehicle_type === 'moto' ? <Bike size={32} /> : <Car size={32} />}
-                        </div>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onAction(
+                                        'Forzar Salida',
+                                        `¿Deseas registrar la salida forzada (Admin) del vehículo ${v.plate}?`,
+                                        async () => {
+                                            try {
+                                                const historyEntry = {
+                                                    plate: v.plate,
+                                                    driver_name: v.driver_name,
+                                                    agent_name: v.agent_name,
+                                                    hospital: v.hospital,
+                                                    gate: v.gate,
+                                                    vehicle_type: v.vehicle_type,
+                                                    type: v.type,
+                                                    entry_time: v.entry_time,
+                                                    exit_time: new Date().toISOString(),
+                                                    status: 'completed_forced_admin',
+                                                    notes: 'Salida Forzada por Admin'
+                                                };
+                                                const { error: histError } = await supabase.from('history').insert(historyEntry);
+                                                if (histError) throw histError;
 
-                        <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.25rem', fontFamily: 'monospace' }}>
-                            {v.plate}
-                        </h3>
+                                                const { error: delError = null } = await supabase.from('active_parking').delete().eq('id', v.id);
+                                                if (delError) throw delError;
+                                                fetchVehicles(); // Forzamos recarga
+                                            } catch (e) {
+                                                console.error("Error al forzar salida:", e);
+                                                alert("Error al forzar salida: " + (e.message || "Verifique consola"));
+                                            }
+                                        },
+                                        'danger'
+                                    );
+                                }}
+                                style={{
+                                    position: 'absolute', top: '0.5rem', right: '0.5rem',
+                                    background: '#FEF2F2', border: '1px solid #FECACA',
+                                    color: '#EF4444', borderRadius: '50%',
+                                    width: '32px', height: '32px',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    cursor: 'pointer', zIndex: 10
+                                }}
+                                title="Forzar Salida"
+                            >
+                                <LogOut size={16} />
+                            </button>
 
-                        <div className="badge badge-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                            <Clock size={12} />
-                            {getDuration(v.entryTime)}
-                        </div>
+                            <div style={{
+                                background: config.bg,
+                                padding: '1.5rem',
+                                borderRadius: '50%',
+                                marginBottom: '1rem',
+                                color: config.color
+                            }}>
+                                {config.icon}
+                            </div>
 
-                        {/* Hover Overlay */}
-                        <div className="visual-info-overlay">
-                            <div style={{ width: '100%' }}>
-                                <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94A3B8', marginBottom: '0.25rem' }}>Conductor</div>
-                                <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '0.75rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    {v.driverName || 'No registrado'}
-                                </div>
+                            <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.25rem', fontFamily: 'monospace' }}>
+                                {v.plate}
+                            </h3>
 
-                                <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94A3B8', marginBottom: '0.25rem' }}>Tipo</div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span style={{ fontWeight: 600 }}>{v.type === 'personal' ? 'Personal' : 'Visitante'}</span>
-                                    {v.hospital && <span style={{ fontSize: '0.7rem', background: 'rgba(255,255,255,0.2)', padding: '0.1rem 0.3rem', borderRadius: '4px' }}>{v.hospital}</span>}
+                            <div className="badge badge-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                <Clock size={12} />
+                                {getDuration(v.entry_time)}
+                            </div>
+
+                            {/* Hover Overlay */}
+                            <div className="visual-info-overlay">
+                                <div style={{ width: '100%' }}>
+                                    <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94A3B8', marginBottom: '0.25rem' }}>Conductor</div>
+                                    <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '0.75rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        {v.driver_name || 'No registrado'}
+                                    </div>
+
+                                    <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94A3B8', marginBottom: '0.25rem' }}>Tipo</div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontWeight: 600 }}>{v.type === 'personal' ? 'Personal' : 'Visitante'}</span>
+                                        {v.hospital && <span style={{ fontSize: '0.7rem', background: 'rgba(255,255,255,0.2)', padding: '0.1rem 0.3rem', borderRadius: '4px' }}>{v.hospital}</span>}
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
 
             {vehicles.length === 0 && (
@@ -933,8 +956,18 @@ function PersonnelView({ isMobile, onAction }) {
                             <div className="input-group">
                                 <label className="label">Tipo</label>
                                 <select className="input" value={newItem.vehicle_type} onChange={e => setNewItem({ ...newItem, vehicle_type: e.target.value })}>
-                                    <option value="auto">Auto</option>
-                                    <option value="moto">Moto</option>
+                                    <option value="auto">🚗 Auto</option>
+                                    <option value="camioneta">🚙 Camioneta</option>
+                                    <option value="suv">SUV</option>
+                                    <option value="moto">🏍️ Moto</option>
+                                    <option value="mototaxi">🛺 Mototaxi</option>
+                                    <option value="ambulancia">🚑 Ambulancia</option>
+                                    <option value="camion">🚚 Camión</option>
+                                    <option value="combi">🚐 Combi</option>
+                                    <option value="furgoneta">📦 Furgoneta</option>
+                                    <option value="bicicleta">🚲 Bicicleta</option>
+                                    <option value="scooter">🛴 Scooter</option>
+                                    <option value="cuatrimoto">🚜 Cuatrimoto</option>
                                 </select>
                             </div>
                             <div className="input-group" style={{ display: 'flex', alignItems: 'flex-end' }}>
@@ -966,8 +999,13 @@ function PersonnelView({ isMobile, onAction }) {
                         </div>
                         <div style={{ background: '#F8FAFC', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <span style={{ fontFamily: 'monospace', fontWeight: 'bold', fontSize: '0.95rem' }}>{p.license_plate}</span>
-                            <div className={`badge ${p.vehicle_type === 'moto' ? 'badge-warning' : 'badge-primary'}`} style={{ fontSize: '0.7rem', padding: '0.1rem 0.4rem' }}>
-                                {p.vehicle_type === 'moto' ? 'Moto' : 'Auto'}
+                            <div className="badge badge-primary" style={{
+                                fontSize: '0.7rem', padding: '0.1rem 0.4rem',
+                                background: getVehicleConfig(p.vehicle_type).bg,
+                                color: getVehicleConfig(p.vehicle_type).color,
+                                border: `1px solid ${getVehicleConfig(p.vehicle_type).color}22`
+                            }}>
+                                {getVehicleConfig(p.vehicle_type).label}
                             </div>
                         </div>
                         <button className="btn-icon" onClick={() => handleDelete(p.id)} style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', color: '#EF4444' }}><Trash2 size={14} /></button>
